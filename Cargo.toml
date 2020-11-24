@@ -1,0 +1,10 @@
+[workspace]
+members = [
+    "rume",
+    "rume_core",
+    "rume_macros",
+]
+exclude = [
+    "examples/to_wav",
+    "examples/beep"
+]

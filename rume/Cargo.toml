@@ -1,0 +1,10 @@
+[package]
+name = "rume"
+version = "0.1.0"
+authors = ["Nico Chatzi <nico.chatzigianis@focusrite.com>"]
+edition = "2018"
+
+[dependencies]
+core = { package = "rume_core", path = "../rume_core" }
+macros = { package = "rume_macros", path = "../rume_macros" }
+heapless = "0.5.6"
