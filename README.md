@@ -1,9 +1,11 @@
-# Rume &emsp; [![Build Status]][actions] [![Latest Version]][crates.io]
+# Rume &emsp; [![Build Status]][actions] [![Latest Version]][crates.io] [![codecov]][coverage]
 
 [Build Status]: https://img.shields.io/github/workflow/status/nicochatzi/rume/CI/main
 [actions]: https://github.com/nicochatzi/rume/actions?query=branch%main
 [Latest Version]: https://img.shields.io/crates/v/rume.svg
 [crates.io]: https://crates.io/crates/rume
+[codecov]:https://codecov.io/gh/nicochatzi/rume/branch/main/graph/badge.svg
+[coverage]:https://codecov.io/gh/nicochatzi/rume
 
 RUst Modular Environment for writing audio DSP graphs.
 
@@ -67,24 +69,21 @@ let mut beep = rume::graph! {
 let (mut frequency_producer, frequency_consumer) = rume::input!(FREQUENCY_ENDPOINT);
 let (audio_out_producer, mut audio_out_consumer) = rume::output!(AUDIO_OUT_ENDPOINT);
 
-// Input data into the graph from another thread
 std::thread::spawn(move || {
     for i in (110..440).step_by(2) {
+        // Input data into the graph from another thread
         frequency_producer.enqueue(i as f32).unwrap();
+        std::thread::sleep(std::time::Duration::from_millis(10));
     }
 });
 
-// Extract data from the graph
-let spec = hound::WavSpec {
-    channels: 1,
-    sample_rate: SAMPLE_RATE,
-    bits_per_sample: 32,
-    sample_format: hound::SampleFormat::Float,
-};
-let mut writer = hound::WavWriter::create("test.wav", spec).unwrap();
+std::thread::spawn(move || {
+    graph.prepare(SAMPLE_RATE.into());
+    graph.render(BUFFER_SIZE);
 
-while let Some(sample) = audio_out_consumer.dequeue() {
-    writer.write_sample(sample).unwrap();
-}
-
+    // Render and extract samples on another thread
+    while let Some(sample) = audio_out_consumer.dequeue() {
+        println!("{}", sample);
+    }
+}).join();
 ```
