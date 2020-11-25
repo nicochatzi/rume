@@ -58,6 +58,13 @@ where
     pub port: Box<I>,
 }
 
+unsafe impl<P, I> Send for InputPort<P, I>
+where
+    P: Processor + ?Sized,
+    I: Input<P> + ?Sized,
+{
+}
+
 impl<P, I> InputPort<P, I>
 where
     P: Processor + ?Sized,
@@ -86,6 +93,13 @@ where
 {
     pub proc: SharedProc<P>,
     pub port: Box<O>,
+}
+
+unsafe impl<P, O> Send for OutputPort<P, O>
+where
+    P: Processor + ?Sized,
+    O: Output<P> + ?Sized,
+{
 }
 
 impl<P, O> OutputPort<P, O>
@@ -272,6 +286,8 @@ impl SignalChain {
         }
     }
 }
+
+unsafe impl Send for SignalChain {}
 
 pub struct SignalChainBuilder {
     chain: SignalChain,

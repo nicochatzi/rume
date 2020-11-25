@@ -193,7 +193,7 @@ pub fn graph(input: TokenStream) -> TokenStream {
 
     graph_as_string.push('{');
     graph_as_string.push('\n');
-    graph_as_string.push_str("use std::{cell::RefCell, rc::Rc};");
+    graph_as_string.push_str("use std::{cell::RefCell, rc::Rc};\n");
 
     for (i, name) in endpoint_names.iter().enumerate() {
         graph_as_string.push_str(&format!(

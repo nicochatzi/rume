@@ -87,17 +87,22 @@ pub fn processor(_attr: TokenStream, item: TokenStream) -> TokenStream {
 // let input_i = (0..inputs.len()).map(syn::Index::from);
 // let output_i = (0..outputs.len()).map(syn::Index::from);
 
-// impl #ident {
-//     pub fn __get_input_port(name: &str) -> String {
-//         match name {
+// let get_input_port_macro = format_ident!("{}__get_input_port", name);
+// let get_output_port_macro = format_ident!("{}__get_output_port", name);
+
+// macro_rules! #get_input_port_macro {
+//     ($name:expr) => {
+//         match $name {
 //             #(#inputs => { format!("input.{}", #input_i) } ,)*
 //             _ => panic!("Not input named {} for processor {}", name, #name),
 //         }
-//     }
-//     pub fn __get_output_port(name: &str) -> String {
+//     };
+// }
+// macro_rules! #get_output_port_macro {
+//     ($name:expr) => {
 //         match name {
 //             #(#outputs => { format!("output.{}", #output_i) }, )*
 //             _ => panic!("Not output named {} for processor {}", name, #name),
 //         }
-//     }
+//     };
 // }

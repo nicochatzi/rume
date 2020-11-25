@@ -1,10 +1,22 @@
 [package]
 name = "rume"
-version = "0.1.0"
+version = "0.0.0"
 authors = ["Nico Chatzi <nico.chatzigianis@focusrite.com>"]
 edition = "2018"
+license = "MIT OR Apache-2.0"
+description = ""
+readme = "README.md"
+homepage = "https://github.com/nicochatzi/rume"
+repository = "https://github.com/nicochatzi/rume"
+keywords = ["dsp", "audio", "graph"]
+categories = ["algorithms", "data-structures", "multimedia"]
 
 [dependencies]
 core = { package = "rume_core", path = "../rume_core" }
 macros = { package = "rume_macros", path = "../rume_macros" }
 heapless = "0.5.6"
+
+[dev-dependencies]
+hound = "3.4.0"
+cpal = "0.13.1"
+anyhow = "1.0.34"
