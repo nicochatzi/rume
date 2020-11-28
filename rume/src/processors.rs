@@ -31,17 +31,17 @@ pub struct Sine {
     sample: f32,
 
     phase: f32,
-    sample_rate: u32,
+    sample_period: f32,
 }
 
 impl Processor for Sine {
     fn prepare(&mut self, data: AudioConfig) {
-        self.sample_rate = data.sample_rate;
+        self.sample_period = 1.0 / data.sample_rate;
     }
 
     fn process(&mut self) {
         const TWO_PI: f32 = 2.0_f32 * std::f32::consts::PI;
-        let increment = TWO_PI * self.frequency * (1.0_f32 / self.sample_rate as f32);
+        let increment = TWO_PI * self.frequency * self.sample_period;
         self.phase = (self.phase + increment) % TWO_PI;
         self.sample = self.phase.sin() * self.amplitude;
     }

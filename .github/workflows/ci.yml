@@ -1,6 +1,6 @@
-on: [push]
+name: main ci
 
-name: CI
+on: [push]
 
 jobs:
   build_and_test:
@@ -8,10 +8,22 @@ jobs:
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v2
+
+      - name: Caching
+        uses: actions/cache@v2
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+
       - uses: actions-rs/toolchain@v1
         with:
+          profile: minimal
           toolchain: stable
-      - name: Test workspace
+
+      - name: Run tests
         uses: actions-rs/cargo@v1
         with:
-          command: test
+          args: --lib --all-features --no-fail-fast
