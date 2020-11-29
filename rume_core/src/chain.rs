@@ -270,4 +270,80 @@ mod test {
             assert_eq!(DummyOutput.get(proc), VALUE_TO_PASS);
         }
     }
+
+    #[derive(Default)]
+    struct MultiInProcessor {
+        input: (MultiInInput, MultiInInput, MultiInInput),
+        output: MultiInOutput,
+        value: f32,
+    }
+
+    impl Processor for MultiInProcessor {
+        fn prepare(&mut self, _: AudioConfig) {}
+        fn process(&mut self) {}
+    }
+
+    input! { MultiInProcessor, MultiInInput,
+        |proc: &mut MultiInProcessor, value: f32| {
+            println!("MultiInInput got: {}", value);
+            proc.value = value;
+        }
+    }
+
+    output! { MultiInProcessor, MultiInOutput,
+        |proc: &mut MultiInProcessor| -> f32 {
+            proc.value
+        }
+    }
+
+    #[derive(Default)]
+    struct MultiOutProcessor {
+        input: MultiOutInput,
+        output: (MultiOutOutput, MultiOutOutput, MultiOutOutput),
+        value: f32,
+    }
+
+    impl Processor for MultiOutProcessor {
+        fn prepare(&mut self, _: AudioConfig) {}
+        fn process(&mut self) {}
+    }
+
+    input! { MultiOutProcessor, MultiOutInput,
+        |proc: &mut MultiOutProcessor, value: f32| {
+            println!("MultiOutInput got: {}", value);
+            proc.value = value;
+        }
+    }
+
+    output! { MultiOutProcessor, MultiOutOutput,
+        |proc: &mut MultiOutProcessor| -> f32 {
+            proc.value
+        }
+    }
+
+    #[test]
+    fn multiple_io_unsorted_gets_sorted() {
+        const VALUE_TO_PASS: f32 = 1.0;
+
+        let (input, mid, output) = (dummy(), dummy(), dummy());
+        let multi_in = make_processor(MultiInProcessor::default());
+        let multi_out = make_processor(MultiOutProcessor::default());
+
+        let mut chain = chain! {
+            (input) => (multi_out),
+                       (multi_out, 0)  => (multi_in, 0),
+                       (multi_out, 1)  => (mid),
+                       (multi_out, 2)  => (multi_in, 2),
+                                          (multi_in) => (output)
+        };
+
+        chain.prepare(48_000.into());
+
+        DummyInput.set(input.clone(), VALUE_TO_PASS);
+
+        chain.render(1);
+
+        assert_eq!(DummyOutput.get(output), VALUE_TO_PASS);
+        assert_eq!(DummyOutput.get(mid), VALUE_TO_PASS);
+    }
 }
