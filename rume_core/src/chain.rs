@@ -103,40 +103,13 @@ impl SignalChainBuilder {
 
 #[macro_export]
 macro_rules! connect {
-    ($builder:expr, ($out_proc:expr, $out_port:tt) => ($in_proc:expr, $in_port:tt)) => {
+    ($builder:expr, ($out_proc:expr $(, $out_port:tt)*) => ($in_proc:expr $(, $in_port:tt)*)) => {
         $builder = $builder
             .processor($out_proc.clone())
             .processor($in_proc.clone())
             .connection(
-                $crate::make_output_port!($out_proc, $out_port),
-                $crate::make_input_port!($in_proc, $in_port),
-            );
-    };
-    ($builder:expr, ($out_proc:expr, $out_port:tt, $out_num:tt) => ($in_proc:expr, $in_port:tt)) => {
-        $builder = $builder
-            .processor($out_proc.clone())
-            .processor($in_proc.clone())
-            .connection(
-                $crate::make_output_port!($out_proc, $out_port, $out_num),
-                $crate::make_input_port!($in_proc, $in_port),
-            );
-    };
-    ($builder:expr, ($out_proc:expr, $out_port:tt) => ($in_proc:expr, $in_port:tt, $in_num:tt)) => {
-        $builder = $builder
-            .processor($out_proc.clone())
-            .processor($in_proc.clone())
-            .connection(
-                $crate::make_output_port!($out_proc, $out_port),
-                $crate::make_input_port!($in_proc, $in_port, $in_num),
-            );
-    };
-    ($builder:expr, ($out_proc:expr, $out_port:tt, $out_num:tt) => ($in_proc:expr, $in_port:tt, $in_num:tt)) => {
-        $builder = $builder
-            .processor($out_proc.clone())
-            .processor($in_proc.clone())
-            .connection(
-                $crate::make_output_port!($out_proc, $out_port, $out_num),
-                $crate::make_input_port!($in_proc, $in_port, $in_num),
+                $crate::make_output_port!($out_proc $(, $out_port)*),
+                $crate::make_input_port!($in_proc $(, $in_port)*),
             );
     };
 }
