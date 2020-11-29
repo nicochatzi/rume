@@ -8,17 +8,17 @@ pub fn processor_output(attr: TokenStream, item: TokenStream) -> TokenStream {
     let processor_type = format_ident!(
         "{}",
         attributes
-            .nth(0)
+            .next()
             .expect("First attribute should be the processor name")
             .to_string()
     );
 
-    let _consume = attributes.nth(0);
+    let _consume = attributes.next();
 
     let output_type = format_ident!(
         "{}",
         attributes
-            .nth(0)
+            .next()
             .expect("Second attribute should be the output struct name")
             .to_string()
     );
@@ -55,17 +55,17 @@ pub fn processor_input(attr: TokenStream, item: TokenStream) -> TokenStream {
     let processor_type = format_ident!(
         "{}",
         attributes
-            .nth(0)
+            .next()
             .expect("First attribute should be the processor name")
             .to_string()
     );
 
-    let _consume = attributes.nth(0);
+    let _consume = attributes.next();
 
     let input_type = format_ident!(
         "{}",
         attributes
-            .nth(0)
+            .next()
             .expect("Second attribute should be the input struct name")
             .to_string()
     );

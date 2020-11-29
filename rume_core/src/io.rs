@@ -1,5 +1,8 @@
 use crate::proc::*;
-use std::ops::{Deref, DerefMut};
+use std::{
+    ops::{Deref, DerefMut},
+    rc::Rc,
+};
 
 pub type OwnedDynInput = InputPort<dyn Processor, dyn Input<dyn Processor>>;
 pub type OwnedDynOutput = OutputPort<dyn Processor, dyn Output<dyn Processor>>;
@@ -53,8 +56,7 @@ where
     I: Input<P> + ?Sized,
 {
     fn eq(&self, other: &InputPort<P, I>) -> bool {
-        // also check type of inputs
-        self.proc.as_ptr() == other.proc.as_ptr()
+        Rc::ptr_eq(&self.proc, &other.proc)
     }
 }
 
@@ -91,8 +93,7 @@ where
     O: Output<P> + ?Sized,
 {
     fn eq(&self, other: &OutputPort<P, O>) -> bool {
-        // also check type of outputs
-        self.proc.as_ptr() == other.proc.as_ptr()
+        Rc::ptr_eq(&self.proc, &other.proc)
     }
 }
 
@@ -249,11 +250,11 @@ macro_rules! make_input_port {
 
 #[derive(Default)]
 pub struct Connections {
-    pub inner: Vec<Box<OwnedDynConnection>>,
+    pub inner: Vec<OwnedDynConnection>,
 }
 
 impl Deref for Connections {
-    type Target = Vec<Box<OwnedDynConnection>>;
+    type Target = Vec<OwnedDynConnection>;
 
     fn deref(&self) -> &Self::Target {
         &self.inner
@@ -267,8 +268,8 @@ impl DerefMut for Connections {
 }
 
 impl Connections {
-    pub fn push(&mut self, connection: Box<OwnedDynConnection>) {
-        if let None = self.inner.iter().find(|c| **c == connection) {
+    pub fn push(&mut self, connection: OwnedDynConnection) {
+        if self.inner.iter().find(|c| **c == connection).is_none() {
             self.inner.push(connection);
         }
     }
@@ -277,7 +278,7 @@ impl Connections {
         let mut outputs = Vec::<SharedDynProc>::new();
         self.inner
             .iter()
-            .filter(|connection| connection.output.proc.as_ptr() == processor.as_ptr())
+            .filter(|connection| Rc::ptr_eq(&connection.output.proc, &processor))
             .for_each(|connection| outputs.push(connection.input.proc.clone()));
         outputs
     }
@@ -285,7 +286,7 @@ impl Connections {
     pub fn transfer(&mut self, processor: SharedDynProc) {
         self.inner
             .iter_mut()
-            .filter(|connection| connection.output.proc.as_ptr() == processor.as_ptr())
+            .filter(|connection| Rc::ptr_eq(&connection.output.proc, &processor))
             .for_each(|connection| connection.transfer());
     }
 }

@@ -91,8 +91,8 @@ impl Processors {
     }
 
     pub fn order(&mut self, order: Vec<usize>) {
-        for i in 0..(order.len() / 2) {
-            self.inner.swap(i, order[i]);
+        for (i, j) in order.iter().enumerate().take(order.len() / 2) {
+            self.inner.swap(i, *j);
         }
     }
 }

@@ -30,26 +30,19 @@ impl SignalChain {
 
 unsafe impl Send for SignalChain {}
 
+#[derive(Default)]
 pub struct SignalChainBuilder {
     chain: SignalChain,
 }
 
 impl SignalChainBuilder {
-    pub fn new() -> Self {
-        Self {
-            chain: SignalChain::default(),
-        }
-    }
-
     pub fn processor(mut self, processor: SharedDynProc) -> Self {
         self.chain.processors.push(processor);
         self
     }
 
     pub fn connection(mut self, output: OwnedDynOutput, input: OwnedDynInput) -> Self {
-        self.chain
-            .connections
-            .push(Box::new(Connection::new(output, input)));
+        self.chain.connections.push(Connection::new(output, input));
         self
     }
 
@@ -123,7 +116,7 @@ macro_rules! connect {
 #[macro_export]
 macro_rules! chain {
     ( $( ($out_proc:expr $(, $out_port_num:tt)*) => ($in_proc:expr $(, $in_port_num:tt)*)),* ) => {{
-        let mut builder = SignalChainBuilder::new();
+        let mut builder = SignalChainBuilder::default();
         $(
             connect!(builder, ($out_proc $(, $out_port_num)*) => ($in_proc $(, $in_port_num)*));
         )*
@@ -137,7 +130,7 @@ mod test {
 
     #[test]
     fn empty_chain_does_not_panic() {
-        let mut chain = SignalChainBuilder::new().build();
+        let mut chain = SignalChainBuilder::default().build();
         chain.prepare(48_000.into());
         chain.process();
     }
@@ -173,14 +166,14 @@ mod test {
 
     #[test]
     fn single_processor_chain_does_not_panic() {
-        let mut chain = SignalChainBuilder::new().processor(dummy()).build();
+        let mut chain = SignalChainBuilder::default().processor(dummy()).build();
         chain.prepare(48_000.into());
         chain.process();
     }
 
     fn make_chain(num_processors: usize) -> (SignalChain, Vec<SharedProc<DummyProcessor>>) {
         let processors = vec![dummy(); num_processors];
-        let mut builder = SignalChainBuilder::new();
+        let mut builder = SignalChainBuilder::default();
 
         for i in 0..processors.len() - 1 {
             connect!(builder, (processors[i]) => (processors[i + 1]));
@@ -254,7 +247,7 @@ mod test {
         const NUM_PROCESSORS: usize = 20;
 
         let processors = vec![dummy(); NUM_PROCESSORS];
-        let mut builder = SignalChainBuilder::new();
+        let mut builder = SignalChainBuilder::default();
 
         DummyInput.set(processors[0].clone(), VALUE_TO_PASS);
 
