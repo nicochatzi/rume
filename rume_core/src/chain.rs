@@ -101,17 +101,34 @@ impl SignalChainBuilder {
     }
 }
 
+/// A short hand for adding a connection to
+/// a `SignalChainBuilder` and implicitly
+/// add processor.
 #[macro_export]
 macro_rules! connect {
-    ($builder:expr, ($out_proc:expr $(, $out_port:tt)*) => ($in_proc:expr $(, $in_port:tt)*)) => {
+    ($builder:expr, ($out_proc:expr $(, $out_port_num:tt)*) => ($in_proc:expr $(, $in_port_num:tt)*)) => {
         $builder = $builder
             .processor($out_proc.clone())
             .processor($in_proc.clone())
             .connection(
-                $crate::make_output_port!($out_proc $(, $out_port)*),
-                $crate::make_input_port!($in_proc $(, $in_port)*),
+                $crate::make_output_port!($out_proc $(, $out_port_num)*),
+                $crate::make_input_port!($in_proc $(, $in_port_num)*),
             );
     };
+}
+
+/// A short hand for creating a signal chain.
+/// This macro takes a series of output-to-input
+/// connections and constructs a `SignalChain`.
+#[macro_export]
+macro_rules! chain {
+    ( $( ($out_proc:expr $(, $out_port_num:tt)*) => ($in_proc:expr $(, $in_port_num:tt)*)),* ) => {{
+        let mut builder = SignalChainBuilder::new();
+        $(
+            connect!(builder, ($out_proc $(, $out_port_num)*) => ($in_proc $(, $in_port_num)*));
+        )*
+        builder.build()
+    }};
 }
 
 #[cfg(test)]
@@ -137,43 +154,36 @@ mod test {
         fn process(&mut self) {}
     }
 
-    #[derive(Default, Clone)]
-    struct DummyInput;
-    impl Input<dyn Processor + 'static> for DummyInput {
-        fn set(&self, this: SharedDynProc, value: f32) {
-            let processor = unsafe { &mut (*(this.as_ptr() as *mut DummyProcessor)) };
-            processor.value = value
+    input! { DummyProcessor, DummyInput,
+        |proc: &mut DummyProcessor, value: f32| {
+            println!("DummyInput got: {}", value);
+            proc.value = value;
         }
     }
 
-    #[derive(Default, Clone)]
-    struct DummyOutput;
-    impl Output<dyn Processor + 'static> for DummyOutput {
-        fn get(&self, this: SharedDynProc) -> f32 {
-            let processor = unsafe { &mut (*(this.as_ptr() as *mut DummyProcessor)) };
-            processor.value
+    output! { DummyProcessor, DummyOutput,
+        |proc: &mut DummyProcessor| -> f32 {
+            proc.value
         }
     }
 
-    fn make_processor() -> SharedProc<DummyProcessor> {
-        make_processor!(DummyProcessor::default())
+    fn dummy() -> SharedProc<DummyProcessor> {
+        make_processor(DummyProcessor::default())
     }
 
     #[test]
     fn single_processor_chain_does_not_panic() {
-        let mut chain = SignalChainBuilder::new()
-            .processor(make_processor())
-            .build();
+        let mut chain = SignalChainBuilder::new().processor(dummy()).build();
         chain.prepare(48_000.into());
         chain.process();
     }
 
     fn make_chain(num_processors: usize) -> (SignalChain, Vec<SharedProc<DummyProcessor>>) {
-        let processors = vec![make_processor(); num_processors];
+        let processors = vec![dummy(); num_processors];
         let mut builder = SignalChainBuilder::new();
 
         for i in 0..processors.len() - 1 {
-            connect!(builder, (processors[i], output) => (processors[i + 1], input));
+            connect!(builder, (processors[i]) => (processors[i + 1]));
         }
 
         (builder.build(), processors)
@@ -243,14 +253,13 @@ mod test {
         const VALUE_TO_PASS: f32 = 1.0;
         const NUM_PROCESSORS: usize = 20;
 
-        let processors = vec![make_processor(); NUM_PROCESSORS];
+        let processors = vec![dummy(); NUM_PROCESSORS];
         let mut builder = SignalChainBuilder::new();
 
-        let input = DummyInput;
-        input.set(processors[0].clone(), VALUE_TO_PASS);
+        DummyInput.set(processors[0].clone(), VALUE_TO_PASS);
 
         for i in 0..processors.len() - 1 {
-            connect!(builder, (processors[i], output) => (processors[i + 1], input));
+            connect!(builder, (processors[i]) => (processors[i + 1]));
         }
         let mut chain = builder.build();
 
@@ -258,49 +267,7 @@ mod test {
         chain.render(1);
 
         for proc in processors {
-            let out = DummyOutput;
-            assert_eq!(out.get(proc), VALUE_TO_PASS);
+            assert_eq!(DummyOutput.get(proc), VALUE_TO_PASS);
         }
-    }
-
-    #[derive(Default)]
-    struct MultiInProcessor {
-        input: (DummyInput, DummyInput, DummyInput),
-        output: DummyOutput,
-        value: f32,
-    }
-
-    impl Processor for MultiInProcessor {
-        fn prepare(&mut self, _: AudioConfig) {}
-        fn process(&mut self) {}
-    }
-
-    #[derive(Default)]
-    struct MultiOutProcessor {
-        input: DummyInput,
-        output: (DummyOutput, DummyOutput, DummyOutput),
-        value: f32,
-    }
-
-    impl Processor for MultiOutProcessor {
-        fn prepare(&mut self, _: AudioConfig) {}
-        fn process(&mut self) {}
-    }
-
-    #[test]
-    fn processor_with_multiple_inputs_gets_sorted() {
-        const VALUE_TO_PASS: f32 = 1.0;
-        const NUM_PROCESSORS: usize = 20;
-
-        let multi_in = make_processor!(MultiInProcessor::default());
-        let multi_out = make_processor!(MultiOutProcessor::default());
-        let mut builder = SignalChainBuilder::new();
-        connect!(builder, (multi_out, output, 0) => (multi_in, input, 0));
-        connect!(builder, (multi_out, output, 1) => (multi_in, input, 1));
-        connect!(builder, (multi_out, output, 2) => (multi_in, input, 2));
-        let mut chain = builder.build();
-
-        chain.prepare(48_000.into());
-        chain.render(1);
     }
 }

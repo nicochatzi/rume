@@ -64,11 +64,8 @@ impl DerefMut for Processors {
     }
 }
 
-#[macro_export]
-macro_rules! make_processor {
-    ($proc:expr) => {
-        std::rc::Rc::new(std::cell::RefCell::new($proc));
-    };
+pub fn make_processor<P>(processor: P) -> SharedProc<P> {
+    Rc::new(RefCell::new(processor))
 }
 
 impl Processors {
