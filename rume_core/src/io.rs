@@ -135,6 +135,38 @@ where
     }
 }
 
+#[macro_export]
+macro_rules! make_output_port {
+    ($proc:expr, $port:tt) => {
+        $crate::OutputPort {
+            proc: $proc.clone(),
+            port: Box::new($proc.clone().borrow().$port.clone()),
+        }
+    };
+    ($proc:expr, $port:tt, $number:tt) => {
+        $crate::OutputPort {
+            proc: $proc.clone(),
+            port: Box::new($proc.clone().borrow().$port.$number.clone()),
+        }
+    };
+}
+
+#[macro_export]
+macro_rules! make_input_port {
+    ($proc:expr, $port:tt) => {
+        $crate::InputPort {
+            proc: $proc.clone(),
+            port: Box::new($proc.clone().borrow().$port.clone()),
+        }
+    };
+    ($proc:expr, $port:tt, $number:tt) => {
+        $crate::InputPort {
+            proc: $proc.clone(),
+            port: Box::new($proc.clone().borrow().$port.$number.clone()),
+        }
+    };
+}
+
 #[derive(Default)]
 pub struct Connections {
     pub inner: Vec<Box<OwnedDynConnection>>,

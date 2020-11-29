@@ -1,6 +1,6 @@
 use proc_macro::{token_stream::IntoIter, TokenStream, TokenTree};
 
-fn consume_until_char(tokens: &mut IntoIter, ch: char) -> String {
+fn consume_until_char(tokens: &mut IntoIter, ch: char, remove_leading_char: bool) -> String {
     let mut initialiser = String::new();
     loop {
         let token = tokens
@@ -13,6 +13,9 @@ fn consume_until_char(tokens: &mut IntoIter, ch: char) -> String {
             }
         }
         initialiser.push_str(&token.to_string());
+    }
+    if remove_leading_char {
+        initialiser.remove(0);
     }
     initialiser
 }
@@ -80,7 +83,7 @@ pub fn graph(input: TokenStream) -> TokenStream {
             .nth(0)
             .expect("Expected ':' character after 'endpoints' keyword");
 
-        endpoint_initialisers.push(consume_until_char(endpoint_tokens.by_ref(), ','));
+        endpoint_initialisers.push(consume_until_char(endpoint_tokens.by_ref(), ',', false));
     }
 
     let _comma = tokens
@@ -127,7 +130,7 @@ pub fn graph(input: TokenStream) -> TokenStream {
             .nth(0)
             .expect("Expected ':' character after an processor name");
 
-        processor_initialisers.push(consume_until_char(processor_tokens.by_ref(), ','));
+        processor_initialisers.push(consume_until_char(processor_tokens.by_ref(), ',', false));
     }
 
     let _comma = tokens
@@ -170,7 +173,7 @@ pub fn graph(input: TokenStream) -> TokenStream {
             .expect("Expected a name for this processor");
         tx_processors.push(tx_processor.to_string());
 
-        tx_ports.push(consume_until_char(connection_tokens.by_ref(), '-'));
+        tx_ports.push(consume_until_char(connection_tokens.by_ref(), '-', true));
 
         let _arrow_second_char = connection_tokens
             .by_ref()
@@ -183,7 +186,7 @@ pub fn graph(input: TokenStream) -> TokenStream {
             .expect("Expected a name for this processor");
         rx_processors.push(rx_processor.to_string());
 
-        rx_ports.push(consume_until_char(connection_tokens.by_ref(), ','));
+        rx_ports.push(consume_until_char(connection_tokens.by_ref(), ',', true));
     }
 
     //
@@ -193,60 +196,55 @@ pub fn graph(input: TokenStream) -> TokenStream {
 
     graph_as_string.push('{');
     graph_as_string.push('\n');
-    graph_as_string.push_str("use std::{cell::RefCell, rc::Rc};\n");
 
     for (i, name) in endpoint_names.iter().enumerate() {
         graph_as_string.push_str(&format!(
-            "\tlet {} = Rc::new(RefCell::new({}));\n",
+            "\tlet {} = rume::make_processor!({});\n",
             name, endpoint_initialisers[i]
         ));
     }
+    graph_as_string.push('\n');
 
     for (i, name) in processor_names.iter().enumerate() {
         graph_as_string.push_str(&format!(
-            "\tlet {} = Rc::new(RefCell::new({}));\n",
+            "\tlet {} = rume::make_processor!({});\n",
             name, processor_initialisers[i]
         ));
     }
+    graph_as_string.push('\n');
 
-    graph_as_string.push_str("\trume::SignalChain::new()\n");
+    graph_as_string.push_str("\tlet mut builder = rume::SignalChainBuilder::new()\n");
 
     for name in endpoint_names {
         graph_as_string.push_str(&format!("\t\t.processor({}.clone())\n", name));
     }
-
-    for name in processor_names {
-        graph_as_string.push_str(&format!("\t\t.processor({}.clone())\n", name));
-    }
+    graph_as_string.push(';');
+    graph_as_string.push('\n');
 
     for i in 0..tx_ports.len() {
+        let find_port_num = |port: &str| -> String {
+            let split: Vec<&str> = port.split('.').collect();
+            if split.len() > 1 {
+                format!(", {}", split[1])
+            } else {
+                "".to_owned()
+            }
+        };
+        let tx_port_num = find_port_num(&tx_ports[i]);
+        let rx_port_num = find_port_num(&rx_ports[i]);
+
         graph_as_string.push_str(&format!(
-            "\t\t.connection(
-                \trume::OutputPort {{ proc: {}.clone(), port: Box::new({}.clone().borrow(){}.clone()) }},
-                \trume::InputPort {{ proc: {}.clone(), port: Box::new({}.clone().borrow(){}.clone()) }},
-            \t)\n",
-            tx_processors[i],
-            tx_processors[i],
-            tx_ports[i],
-            rx_processors[i],
-            rx_processors[i],
-            rx_ports[i],
+            "\trume::connect!(builder, ({}, output{}) => ({}, input{}));\n",
+            tx_processors[i], tx_port_num, rx_processors[i], rx_port_num,
         ));
     }
 
-    graph_as_string.push_str("\t\t.build()\n");
+    graph_as_string.push('\n');
+    graph_as_string.push_str("\tbuilder.build()\n");
     graph_as_string.push('}');
     graph_as_string.push('\n');
 
-    // println!("{}", graph_as_string);
+    println!("{}", graph_as_string);
 
     graph_as_string.parse().unwrap()
-}
-
-#[cfg(test)]
-mod tests {
-    #[test]
-    fn it_works() {
-        assert_eq!(2 + 2, 4);
-    }
 }

@@ -10,5 +10,3 @@ homepage = "https://github.com/nicochatzi/rume"
 repository = "https://github.com/nicochatzi/rume"
 keywords = ["dsp", "audio", "graph"]
 categories = [""]
-
-[dependencies]

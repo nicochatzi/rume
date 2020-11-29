@@ -23,11 +23,22 @@ impl Into<AudioConfig> for f32 {
     }
 }
 
+/// A shared pointer to a generic type
+/// which will be expected to be a `Processor`.
 pub type SharedProc<P> = Rc<RefCell<P>>;
-pub type SharedDynProc = SharedProc<dyn Processor>;
 
+/// A generic dynamic Processor.
+pub type DynProc = dyn Processor + 'static;
+
+/// A shared pointer to a dynamic `Processor`.
+pub type SharedDynProc = Rc<RefCell<DynProc>>;
+
+/// A weak pointer, i.e. a "view" of
+/// a generic type.
 pub type SharedProcView<P> = Weak<RefCell<P>>;
-pub type SharedDynProcView = SharedProcView<dyn Processor>;
+
+/// A weak pointer to a dynamic `Processor`.
+pub type SharedDynProcView = Weak<RefCell<DynProc>>;
 
 pub trait Processor {
     fn prepare(&mut self, data: AudioConfig);
@@ -51,6 +62,13 @@ impl DerefMut for Processors {
     fn deref_mut(&mut self) -> &mut Self::Target {
         &mut self.inner
     }
+}
+
+#[macro_export]
+macro_rules! make_processor {
+    ($proc:expr) => {
+        std::rc::Rc::new(std::cell::RefCell::new($proc));
+    };
 }
 
 impl Processors {
