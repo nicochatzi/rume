@@ -1,20 +1,25 @@
-use crate::{io::*, proc::*};
+use crate::{io::*, proc::*, sort::TopologicalSort};
 
 #[derive(Default)]
 pub struct SignalChain {
     processors: Processors,
     connections: Connections,
+    buffer_size: usize,
 }
+
+unsafe impl Send for SignalChain {}
 
 impl Processor for SignalChain {
     fn prepare(&mut self, config: AudioConfig) {
+        self.buffer_size = config.buffer_size;
         self.processors
-            .inner
             .iter_mut()
             .for_each(|processor| processor.borrow_mut().prepare(config.clone()));
     }
 
-    fn process(&mut self) {}
+    fn process(&mut self) {
+        self.render(self.buffer_size);
+    }
 }
 
 impl SignalChain {
@@ -27,8 +32,6 @@ impl SignalChain {
         }
     }
 }
-
-unsafe impl Send for SignalChain {}
 
 #[derive(Default)]
 pub struct SignalChainBuilder {
@@ -51,35 +54,14 @@ impl SignalChainBuilder {
         self.chain
     }
 
-    fn sort_inner(&mut self, index: usize, visited: &mut Vec<bool>, ordering: &mut Vec<usize>) {
-        visited[index] = true;
-
-        for i in self.next_processors(index) {
-            if !visited[i] {
-                self.sort_inner(i, visited, ordering);
-            }
-        }
-
-        ordering.push(index);
-    }
-
     fn sort(&mut self) {
-        let mut ordering = Vec::<usize>::new();
-        let mut visited = vec![false; self.chain.processors.inner.len()];
-
-        for i in 0..self.chain.processors.inner.len() {
-            if !visited[i] {
-                self.sort_inner(i, &mut visited, &mut ordering);
-            }
-        }
-
-        ordering.reverse();
-
+        let mut ordering =
+            TopologicalSort::sort(self.chain.processors.len(), |i| self.next_processors(i));
         self.chain.processors.order(ordering);
     }
 
     fn next_processors(&self, index: usize) -> Vec<usize> {
-        let root_processor = self.chain.processors.inner.get(index).unwrap().clone();
+        let root_processor = self.chain.processors.get(index).unwrap().clone();
         self.chain
             .connections
             .outputs(root_processor)
