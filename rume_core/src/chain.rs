@@ -1,35 +1,31 @@
-use crate::{io::*, proc::*, sort::TopologicalSort};
+use crate::{io::*, proc::*, sort::*};
+
+pub trait Renderable {
+    fn render(&mut self, num_samples: usize);
+}
 
 #[derive(Default)]
 pub struct SignalChain {
-    processors: Processors,
-    connections: Connections,
-    buffer_size: usize,
+    processors: ConnectedProcessors,
+    config: AudioConfig,
 }
 
 unsafe impl Send for SignalChain {}
 
 impl Processor for SignalChain {
     fn prepare(&mut self, config: AudioConfig) {
-        self.buffer_size = config.buffer_size;
-        self.processors
-            .iter_mut()
-            .for_each(|processor| processor.borrow_mut().prepare(config.clone()));
+        self.config.buffer_size = config.buffer_size;
+        self.processors.prepare(config);
     }
 
     fn process(&mut self) {
-        self.render(self.buffer_size);
+        self.render(self.config.buffer_size);
     }
 }
 
-impl SignalChain {
-    pub fn render(&mut self, num_samples: usize) {
-        for _ in 0..num_samples {
-            for processor in self.processors.iter_mut() {
-                processor.borrow_mut().process();
-                self.connections.transfer(processor.clone());
-            }
-        }
+impl Renderable for SignalChain {
+    fn render(&mut self, num_samples: usize) {
+        (0..num_samples).for_each(|_| self.processors.process());
     }
 }
 
@@ -44,8 +40,12 @@ impl SignalChainBuilder {
         self
     }
 
-    pub fn connection(mut self, output: OwnedDynOutput, input: OwnedDynInput) -> Self {
-        self.chain.connections.push(Connection::new(output, input));
+    pub fn connection(mut self, output: DynOutputPort, input: DynInputPort) -> Self {
+        self.chain
+            .processors
+            .find_mut(output.proc.clone())
+            .expect("Did not find this output processor in the chain")
+            .add_output(Connection::new(output, input));
         self
     }
 
@@ -55,24 +55,31 @@ impl SignalChainBuilder {
     }
 
     fn sort(&mut self) {
-        let mut ordering =
-            TopologicalSort::sort(self.chain.processors.len(), |i| self.next_processors(i));
-        self.chain.processors.order(ordering);
-    }
-
-    fn next_processors(&self, index: usize) -> Vec<usize> {
-        let root_processor = self.chain.processors.get(index).unwrap().clone();
         self.chain
-            .connections
-            .outputs(root_processor)
+            .processors
+            .order(TopologicalSort::reverse_sort(&self));
+    }
+}
+
+impl Sortable for &mut SignalChainBuilder {
+    fn next_nodes(&self, index: usize) -> Vec<usize> {
+        self.chain
+            .processors
+            .get(index)
+            .unwrap()
+            .outs()
             .iter()
-            .map(|adj_processor| {
+            .map(|con| {
                 self.chain
                     .processors
-                    .index_of(adj_processor.clone())
-                    .expect("Could not find processor")
+                    .index_of(con.output.proc.clone())
+                    .expect("Did not find this output processor in the chain")
             })
             .collect()
+    }
+
+    fn num_nodes(&self) -> usize {
+        self.chain.processors.len()
     }
 }
 
@@ -109,41 +116,13 @@ macro_rules! chain {
 #[cfg(test)]
 mod test {
     use super::*;
+    use crate::proc::dummies::*;
 
     #[test]
     fn empty_chain_does_not_panic() {
         let mut chain = SignalChainBuilder::default().build();
         chain.prepare(48_000.into());
         chain.process();
-    }
-
-    #[derive(Default)]
-    struct DummyProcessor {
-        input: DummyInput,
-        output: DummyOutput,
-        value: f32,
-    }
-
-    impl Processor for DummyProcessor {
-        fn prepare(&mut self, _: AudioConfig) {}
-        fn process(&mut self) {}
-    }
-
-    input! { DummyProcessor, DummyInput,
-        |proc: &mut DummyProcessor, value: f32| {
-            println!("DummyInput got: {}", value);
-            proc.value = value;
-        }
-    }
-
-    output! { DummyProcessor, DummyOutput,
-        |proc: &mut DummyProcessor| -> f32 {
-            proc.value
-        }
-    }
-
-    fn dummy() -> SharedProc<DummyProcessor> {
-        make_processor(DummyProcessor::default())
     }
 
     #[test]
@@ -243,56 +222,6 @@ mod test {
 
         for proc in processors {
             assert_eq!(DummyOutput.get(proc), VALUE_TO_PASS);
-        }
-    }
-
-    #[derive(Default)]
-    struct MultiInProcessor {
-        input: (MultiInInput, MultiInInput, MultiInInput),
-        output: MultiInOutput,
-        value: f32,
-    }
-
-    impl Processor for MultiInProcessor {
-        fn prepare(&mut self, _: AudioConfig) {}
-        fn process(&mut self) {}
-    }
-
-    input! { MultiInProcessor, MultiInInput,
-        |proc: &mut MultiInProcessor, value: f32| {
-            println!("MultiInInput got: {}", value);
-            proc.value = value;
-        }
-    }
-
-    output! { MultiInProcessor, MultiInOutput,
-        |proc: &mut MultiInProcessor| -> f32 {
-            proc.value
-        }
-    }
-
-    #[derive(Default)]
-    struct MultiOutProcessor {
-        input: MultiOutInput,
-        output: (MultiOutOutput, MultiOutOutput, MultiOutOutput),
-        value: f32,
-    }
-
-    impl Processor for MultiOutProcessor {
-        fn prepare(&mut self, _: AudioConfig) {}
-        fn process(&mut self) {}
-    }
-
-    input! { MultiOutProcessor, MultiOutInput,
-        |proc: &mut MultiOutProcessor, value: f32| {
-            println!("MultiOutInput got: {}", value);
-            proc.value = value;
-        }
-    }
-
-    output! { MultiOutProcessor, MultiOutOutput,
-        |proc: &mut MultiOutProcessor| -> f32 {
-            proc.value
         }
     }
 

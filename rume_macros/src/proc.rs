@@ -59,19 +59,40 @@ pub fn processor(_attr: TokenStream, item: TokenStream) -> TokenStream {
             #(#fields),*
         }
         #(
-            input! { #processor, #input_enums,
-                |proc: &mut #processor, value: f32| {
-                    proc.#inputs = value;
+            #[derive(Debug, Default, Clone)]
+            pub struct #input_enums;
+            impl Input<dyn Processor + 'static> for #input_enums {
+                fn set(&self, this: SharedProc<dyn Processor + 'static>, value: f32) {
+                    let processor = unsafe {&mut (*(this.as_ptr() as *mut #processor)) };
+                    processor.#inputs = value;
                 }
             }
         )*
         #(
-            output! { #processor, #output_enums,
-                |proc: &mut #processor| -> f32 {
-                    proc.#outputs
+            #[derive(Debug, Default, Clone)]
+            pub struct #output_enums;
+            impl Output<dyn Processor + 'static> for #output_enums {
+                fn get(&self, this: SharedProc<dyn Processor + 'static>) -> f32 {
+                    let processor = unsafe {&mut (*(this.as_ptr() as *mut #processor)) };
+                    processor.#outputs
                 }
             }
         )*
     })
     .into()
 }
+
+// #(
+//     input! { #processor, #input_enums,
+//         |proc: &mut #processor, value: f32| {
+//             proc.#inputs = value;
+//         }
+//     }
+// )*
+// #(
+//     output! { #processor, #output_enums,
+//         |proc: &mut #processor| -> f32 {
+//             proc.#outputs
+//         }
+//     }
+// )*

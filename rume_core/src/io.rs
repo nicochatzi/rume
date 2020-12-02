@@ -1,13 +1,9 @@
 use crate::proc::*;
-use std::{
-    ops::{Deref, DerefMut},
-    rc::Rc,
-};
+use std::rc::Rc;
 
-pub type OwnedDynInput = InputPort<dyn Processor, dyn Input<dyn Processor>>;
-pub type OwnedDynOutput = OutputPort<dyn Processor, dyn Output<dyn Processor>>;
-
-pub type OwnedDynConnection =
+pub type DynInputPort = InputPort<dyn Processor, dyn Input<dyn Processor>>;
+pub type DynOutputPort = OutputPort<dyn Processor, dyn Output<dyn Processor>>;
+pub type DynConnection =
     Connection<dyn Processor, dyn Input<dyn Processor>, dyn Processor, dyn Output<dyn Processor>>;
 
 pub trait Input<P>
@@ -45,6 +41,7 @@ where
     P: Processor + ?Sized,
     I: Input<P> + ?Sized,
 {
+    #[inline(always)]
     pub fn set(&mut self, data: f32) {
         self.port.set(self.proc.clone(), data);
     }
@@ -115,12 +112,13 @@ where
     POut: Processor + ?Sized,
     O: Output<POut> + ?Sized,
 {
-    pub fn transfer(&mut self) {
-        self.input.set(self.output.get());
-    }
-
     pub fn new(output: OutputPort<POut, O>, input: InputPort<PIn, I>) -> Self {
         Self { input, output }
+    }
+
+    #[inline(always)]
+    pub fn transfer(&mut self) {
+        self.input.set(self.output.get());
     }
 }
 
@@ -246,47 +244,4 @@ macro_rules! make_input_port {
             port: Box::new($proc.clone().borrow().input $(. $port_num)* .clone()),
         }
     };
-}
-
-#[derive(Default)]
-pub struct Connections {
-    pub inner: Vec<OwnedDynConnection>,
-}
-
-impl Deref for Connections {
-    type Target = Vec<OwnedDynConnection>;
-
-    fn deref(&self) -> &Self::Target {
-        &self.inner
-    }
-}
-
-impl DerefMut for Connections {
-    fn deref_mut(&mut self) -> &mut Self::Target {
-        &mut self.inner
-    }
-}
-
-impl Connections {
-    pub fn push(&mut self, connection: OwnedDynConnection) {
-        if self.inner.iter().find(|c| **c == connection).is_none() {
-            self.inner.push(connection);
-        }
-    }
-
-    pub fn outputs(&self, processor: SharedDynProc) -> Vec<SharedDynProc> {
-        let mut outputs = Vec::<SharedDynProc>::new();
-        self.inner
-            .iter()
-            .filter(|connection| Rc::ptr_eq(&connection.output.proc, &processor))
-            .for_each(|connection| outputs.push(connection.input.proc.clone()));
-        outputs
-    }
-
-    pub fn transfer(&mut self, processor: SharedDynProc) {
-        self.inner
-            .iter_mut()
-            .filter(|connection| Rc::ptr_eq(&connection.output.proc, &processor))
-            .for_each(|connection| connection.transfer());
-    }
 }

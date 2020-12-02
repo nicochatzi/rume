@@ -193,7 +193,8 @@ pub fn graph(input: TokenStream) -> TokenStream {
 
     graph_as_string.push('{');
     graph_as_string.push('\n');
-    graph_as_string.push_str("use std::{cell::RefCell, rc::Rc};\n");
+    graph_as_string.push_str("use std::{rc::{Rc, Weak}, cell::RefCell};\n");
+    graph_as_string.push('\n');
 
     for (i, name) in endpoint_names.iter().enumerate() {
         graph_as_string.push_str(&format!(
@@ -223,7 +224,7 @@ pub fn graph(input: TokenStream) -> TokenStream {
         graph_as_string.push_str(&format!(
             "\t\t.connection(
                 \trume::OutputPort {{ proc: {}.clone(), port: Box::new({}.clone().borrow(){}.clone()) }},
-                \trume::InputPort {{ proc: {}.clone(), port: Box::new({}.clone().borrow(){}.clone()) }},
+                \trume::InputPort {{ proc: {}.clone(), port: Box::new({}.clone().borrow(){}.clone()) }}
             \t)\n",
             tx_processors[i],
             tx_processors[i],

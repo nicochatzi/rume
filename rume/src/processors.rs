@@ -36,7 +36,7 @@ pub struct Sine {
 
 impl Processor for Sine {
     fn prepare(&mut self, config: AudioConfig) {
-        self.sample_period = 1.0 / config.sample_rate;
+        self.sample_period = 1.0 / config.sample_rate as f32;
     }
 
     fn process(&mut self) {
