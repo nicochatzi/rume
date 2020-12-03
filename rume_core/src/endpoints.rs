@@ -74,19 +74,19 @@ impl Processor for OutputEndpoint {
 
 #[macro_export]
 macro_rules! input_endpoint {
-    ($endpoint_name:ident) => {{
-        static mut $endpoint_name: $crate::InputStream =
-            heapless::spsc::Queue(heapless::i::Queue::new());
-        unsafe { $endpoint_name.split() }
+    () => {{
+        use heapless::{i, spsc};
+        static mut ENDPOINT: $crate::InputStream = spsc::Queue(i::Queue::new());
+        unsafe { ENDPOINT.split() }
     }};
 }
 
 #[macro_export]
 macro_rules! output_endpoint {
-    ($endpoint_name:ident) => {{
-        static mut $endpoint_name: $crate::OutputStream =
-            heapless::spsc::Queue(heapless::i::Queue::new());
-        unsafe { $endpoint_name.split() }
+    () => {{
+        use heapless::{i, spsc};
+        static mut ENDPOINT: $crate::OutputStream = spsc::Queue(i::Queue::new());
+        unsafe { ENDPOINT.split() }
     }};
 }
 
@@ -97,7 +97,7 @@ mod test {
     #[test]
     fn input_endpoint_consumes_data() {
         const VALUE_TO_PASS: f32 = 3.14;
-        let (mut producer, consumer) = input_endpoint!(DUMMY_ENDPOINT);
+        let (mut producer, consumer) = input_endpoint!();
         let processor = make_processor(InputEndpoint::new(consumer));
 
         producer.enqueue(VALUE_TO_PASS).unwrap();
@@ -109,10 +109,11 @@ mod test {
     #[test]
     fn output_endpoint_produces_data() {
         const VALUE_TO_PASS: f32 = 3.14;
-        let (producer, mut consumer) = output_endpoint!(DUMMY_ENDPOINT);
+        let (producer, mut consumer) = output_endpoint!();
         let processor = make_processor(OutputEndpoint::new(producer));
 
         OutputEndpointInput.set(processor.clone(), VALUE_TO_PASS);
+
         assert_eq!(consumer.dequeue().unwrap(), VALUE_TO_PASS);
     }
 }

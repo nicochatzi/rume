@@ -11,8 +11,8 @@ const NUM_BUFFERS: usize = (SAMPLE_RATE as f32 / BUFFER_SIZE as f32) as usize * 
 const BUFFER_TIME: f32 = BUFFER_SIZE as f32 / SAMPLE_RATE as f32;
 
 fn main() {
-    let (mut frequency_producer, frequency_consumer) = rume::input!(FREQUENCY_ENDPOINT);
-    let (audio_out_producer, mut audio_out_consumer) = rume::output!(AUDIO_OUT_ENDPOINT);
+    let (mut frequency_producer, frequency_consumer) = rume::input_endpoint!();
+    let (audio_out_producer, mut audio_out_consumer) = rume::output_endpoint!();
 
     // UI Thread
     std::thread::spawn(move || {

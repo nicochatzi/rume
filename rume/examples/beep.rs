@@ -2,7 +2,7 @@ use cpal::traits::{DeviceTrait, HostTrait, StreamTrait};
 use rume::{Processor, Renderable};
 
 fn build_graph() -> (rume::SignalChain, rume::OutputStreamConsumer) {
-    let (producer, consumer) = rume::output!(AUDIO_OUT_ENDPOINT);
+    let (producer, consumer) = rume::output_endpoint!();
 
     let beep = rume::graph! {
         endpoints: {
