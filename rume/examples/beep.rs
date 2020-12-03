@@ -1,5 +1,5 @@
 use cpal::traits::{DeviceTrait, HostTrait, StreamTrait};
-use rume::Processor;
+use rume::{Processor, Renderable};
 
 fn build_graph() -> (rume::SignalChain, rume::OutputStreamConsumer) {
     let (producer, consumer) = rume::output!(AUDIO_OUT_ENDPOINT);
@@ -23,8 +23,9 @@ fn build_graph() -> (rume::SignalChain, rume::OutputStreamConsumer) {
 }
 
 fn main() {
-    let (graph, consumer) = build_graph();
     let (device, config) = setup_cpal();
+    let (mut graph, consumer) = build_graph();
+    graph.prepare((config.sample_rate().0 as f32).into());
 
     match config.sample_format() {
         cpal::SampleFormat::F32 => run::<f32>(&device, &config.into(), graph, consumer).unwrap(),
@@ -65,6 +66,7 @@ fn setup_cpal() -> (cpal::Device, cpal::SupportedStreamConfig) {
         .default_output_device()
         .expect("failed to find a default output device");
     let config = device.default_output_config().unwrap();
+
     (device, config)
 }
 
@@ -78,8 +80,6 @@ where
     T: cpal::Sample,
 {
     let channels = config.channels as usize;
-
-    graph.prepare(config.sample_rate.0.into());
 
     let mut next_value = move || {
         graph.render(1);

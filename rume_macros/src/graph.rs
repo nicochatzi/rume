@@ -5,7 +5,7 @@ fn consume_until_char(tokens: &mut IntoIter, ch: char) -> String {
     loop {
         let token = tokens
             .by_ref()
-            .nth(0)
+            .next()
             .expect("Incorrectly terminated declaration");
         if let TokenTree::Punct(token) = token.clone() {
             if token.as_char() == ch {
@@ -32,7 +32,7 @@ fn num_chars_in(tokens: &mut IntoIter, ch: char) -> usize {
 }
 
 fn extract_group(token: &mut IntoIter, error_message: &str) -> IntoIter {
-    match token.nth(0).expect(error_message) {
+    match token.next().expect(error_message) {
         TokenTree::Group(group) => group,
         _ => panic!(error_message.to_owned()),
     }
@@ -53,11 +53,11 @@ pub fn graph(input: TokenStream) -> TokenStream {
     //  ```
     //
     let _endpoints_keyword = tokens
-        .nth(0)
+        .next()
         .expect("The graph declaration must start with a list of endpoints delimited by the 'endpoints' keyword");
 
     let _colon = tokens
-        .nth(0)
+        .next()
         .expect("Expected ':' character after 'endpoints' keyword");
 
     let missing_endpoint_group_message =
@@ -71,13 +71,13 @@ pub fn graph(input: TokenStream) -> TokenStream {
     for _ in 0..num_endpoints {
         let endpoint_name = endpoint_tokens
             .by_ref()
-            .nth(0)
+            .next()
             .expect("Expected a name for this endpoint");
         endpoint_names.push(endpoint_name.to_string());
 
         let _colon = endpoint_tokens
             .by_ref()
-            .nth(0)
+            .next()
             .expect("Expected ':' character after 'endpoints' keyword");
 
         endpoint_initialisers.push(consume_until_char(endpoint_tokens.by_ref(), ','));
@@ -85,7 +85,7 @@ pub fn graph(input: TokenStream) -> TokenStream {
 
     let _comma = tokens
         .by_ref()
-        .nth(0)
+        .next()
         .expect("Expected ',' character after 'endpoints'");
 
     //
@@ -100,11 +100,11 @@ pub fn graph(input: TokenStream) -> TokenStream {
     //
 
     let _processor_keyword = tokens
-        .nth(0)
+        .next()
         .expect("The graph declaration must have with a list of processors delimited by the 'processors' keyword after the endpoints declaration");
 
     let _colon = tokens
-        .nth(0)
+        .next()
         .expect("Expected ':' character after 'processors' keyword");
 
     let missing_processor_group_message =
@@ -118,13 +118,13 @@ pub fn graph(input: TokenStream) -> TokenStream {
     for _ in 0..num_processors {
         let processor_name = processor_tokens
             .by_ref()
-            .nth(0)
+            .next()
             .expect("Expected a name for this processor");
         processor_names.push(processor_name.to_string());
 
         let _semi_colon = processor_tokens
             .by_ref()
-            .nth(0)
+            .next()
             .expect("Expected ':' character after an processor name");
 
         processor_initialisers.push(consume_until_char(processor_tokens.by_ref(), ','));
@@ -132,7 +132,7 @@ pub fn graph(input: TokenStream) -> TokenStream {
 
     let _comma = tokens
         .by_ref()
-        .nth(0)
+        .next()
         .expect("Expected ',' character after 'processors'");
 
     //
@@ -146,11 +146,11 @@ pub fn graph(input: TokenStream) -> TokenStream {
     //  ```
 
     let _connections_keyword = tokens
-        .nth(0)
+        .next()
         .expect("The graph declaration must have with a list of connections delimited by the 'connections' keyword after the processors declaration");
 
     let _colon = tokens
-        .nth(0)
+        .next()
         .expect("Expected ':' character after 'connections' keyword");
 
     let missing_connection_group_message =
@@ -166,7 +166,7 @@ pub fn graph(input: TokenStream) -> TokenStream {
     for _ in 0..num_connections {
         let tx_processor = connection_tokens
             .by_ref()
-            .nth(0)
+            .next()
             .expect("Expected a name for this processor");
         tx_processors.push(tx_processor.to_string());
 
@@ -174,12 +174,12 @@ pub fn graph(input: TokenStream) -> TokenStream {
 
         let _arrow_second_char = connection_tokens
             .by_ref()
-            .nth(0)
+            .next()
             .expect("Expected '>' after '-' to form '->'");
 
         let rx_processor = connection_tokens
             .by_ref()
-            .nth(0)
+            .next()
             .expect("Expected a name for this processor");
         rx_processors.push(rx_processor.to_string());
 
@@ -193,7 +193,8 @@ pub fn graph(input: TokenStream) -> TokenStream {
 
     graph_as_string.push('{');
     graph_as_string.push('\n');
-    graph_as_string.push_str("use std::{cell::RefCell, rc::Rc};\n");
+    graph_as_string.push_str("use std::{rc::{Rc, Weak}, cell::RefCell};\n");
+    graph_as_string.push('\n');
 
     for (i, name) in endpoint_names.iter().enumerate() {
         graph_as_string.push_str(&format!(
@@ -209,7 +210,7 @@ pub fn graph(input: TokenStream) -> TokenStream {
         ));
     }
 
-    graph_as_string.push_str("\trume::SignalChain::new()\n");
+    graph_as_string.push_str("\trume::SignalChainBuilder::default()\n");
 
     for name in endpoint_names {
         graph_as_string.push_str(&format!("\t\t.processor({}.clone())\n", name));
@@ -223,7 +224,7 @@ pub fn graph(input: TokenStream) -> TokenStream {
         graph_as_string.push_str(&format!(
             "\t\t.connection(
                 \trume::OutputPort {{ proc: {}.clone(), port: Box::new({}.clone().borrow(){}.clone()) }},
-                \trume::InputPort {{ proc: {}.clone(), port: Box::new({}.clone().borrow(){}.clone()) }},
+                \trume::InputPort {{ proc: {}.clone(), port: Box::new({}.clone().borrow(){}.clone()) }}
             \t)\n",
             tx_processors[i],
             tx_processors[i],
