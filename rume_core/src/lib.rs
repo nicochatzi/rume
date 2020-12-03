@@ -14,3 +14,7 @@ pub use proc::*;
 #[macro_use]
 pub mod chain;
 pub use chain::*;
+
+#[macro_use]
+pub mod endpoints;
+pub use endpoints::*;

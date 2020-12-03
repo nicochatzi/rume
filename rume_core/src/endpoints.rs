@@ -1,7 +1,5 @@
-use core::*;
-use macros::*;
-
-use heapless::{
+use crate::*;
+pub use heapless::{
     consts::*,
     spsc::{Consumer, Producer, Queue},
 };
@@ -21,15 +19,21 @@ pub type OutputStreamProducer = Producer<'static, StreamDataType, OutputStreamSi
 pub struct InputEndpoint {
     pub output: InputEndpointOutput,
     stream: InputStreamConsumer,
-    memory: f32,
+    value: f32,
+}
+
+output! { InputEndpoint, InputEndpointOutput,
+    |proc: &mut InputEndpoint| -> f32 {
+        proc.value
+    }
 }
 
 impl InputEndpoint {
     pub fn new(stream: InputStreamConsumer) -> Self {
         Self {
-            output: (InputEndpointOutput),
+            output: InputEndpointOutput,
             stream,
-            memory: 0.0,
+            value: 0.0,
         }
     }
 }
@@ -38,14 +42,9 @@ impl Processor for InputEndpoint {
     fn prepare(&mut self, _: AudioConfig) {}
     fn process(&mut self) {
         if let Some(value) = self.stream.dequeue() {
-            self.memory = value;
+            self.value = value;
         }
     }
-}
-
-#[processor_output(InputEndpoint, InputEndpointOutput)]
-fn get(input: &mut InputEndpoint) -> f32 {
-    input.memory
 }
 
 pub struct OutputEndpoint {
@@ -53,15 +52,16 @@ pub struct OutputEndpoint {
     stream: OutputStreamProducer,
 }
 
-#[processor_input(OutputEndpoint, OutputEndpointInput)]
-fn set(output: &mut OutputEndpoint, value: f32) {
-    output.stream.enqueue(value).unwrap();
+input! { OutputEndpoint, OutputEndpointInput,
+    |proc: &mut OutputEndpoint, value: f32| {
+        proc.stream.enqueue(value).unwrap();
+    }
 }
 
 impl OutputEndpoint {
     pub fn new(stream: OutputStreamProducer) -> Self {
         Self {
-            input: (OutputEndpointInput),
+            input: OutputEndpointInput,
             stream,
         }
     }
@@ -72,64 +72,47 @@ impl Processor for OutputEndpoint {
     fn process(&mut self) {}
 }
 
-// struct Endpoints {
-//     inputs: Vec<InputEndpoint>,
-//     outputs: Vec<OutputEndpoint>,
-// }
-
-// struct Module {
-//     input: (ModuleInput0, ModuleInput1),
-//     output: (ModuleOutput0),
-//     endpoints: Endpoints,
-//     chain: SignalChain,
-// }
-
-// impl Processor for Module {
-//     fn prepare(&mut self, config: AudioConfig) {
-//         self.chain.prepare(config);
-//     }
-
-//     fn process(&mut self) {
-//         self.chain.process();
-//     }
-// }
-
-// impl Module {
-//     pub fn new(chain: SignalChain, endpoints: Endpoints) -> Self {
-//         Self {
-//             input: (ModuleInput0, ModuleInput1),
-//             output: (ModuleOutput0),
-//             endpoints,
-//             chain,
-//         }
-//     }
-// }
-
-// #[processor_input(Module, ModuleInput0)]
-// fn set(module: &mut Module, value: f32) {
-//     module.endpoints.inputs.get(0).unwrap().set(value)
-// }
-
-// #[processor_input(Module, ModuleInput1)]
-// fn set(module: &mut Module, value: f32) {}
-
-// #[processor_output(Module, ModuleOutput0)]
-// fn get(module: &mut Module) -> f32 {}
-
 #[macro_export]
-macro_rules! input {
+macro_rules! input_endpoint {
     ($endpoint_name:ident) => {{
-        static mut $endpoint_name: rume::InputStream =
+        static mut $endpoint_name: $crate::InputStream =
             heapless::spsc::Queue(heapless::i::Queue::new());
         unsafe { $endpoint_name.split() }
     }};
 }
 
 #[macro_export]
-macro_rules! output {
+macro_rules! output_endpoint {
     ($endpoint_name:ident) => {{
-        static mut $endpoint_name: rume::OutputStream =
+        static mut $endpoint_name: $crate::OutputStream =
             heapless::spsc::Queue(heapless::i::Queue::new());
         unsafe { $endpoint_name.split() }
     }};
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    #[test]
+    fn input_endpoint_consumes_data() {
+        const VALUE_TO_PASS: f32 = 3.14;
+        let (mut producer, consumer) = input_endpoint!(DUMMY_ENDPOINT);
+        let processor = make_processor(InputEndpoint::new(consumer));
+
+        producer.enqueue(VALUE_TO_PASS).unwrap();
+        processor.borrow_mut().process();
+
+        assert_eq!(InputEndpointOutput.get(processor.clone()), VALUE_TO_PASS);
+    }
+
+    #[test]
+    fn output_endpoint_produces_data() {
+        const VALUE_TO_PASS: f32 = 3.14;
+        let (producer, mut consumer) = output_endpoint!(DUMMY_ENDPOINT);
+        let processor = make_processor(OutputEndpoint::new(producer));
+
+        OutputEndpointInput.set(processor.clone(), VALUE_TO_PASS);
+        assert_eq!(consumer.dequeue().unwrap(), VALUE_TO_PASS);
+    }
 }

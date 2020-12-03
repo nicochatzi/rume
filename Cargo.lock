@@ -929,6 +929,9 @@ dependencies = [
 [[package]]
 name = "rume_core"
 version = "0.0.0"
+dependencies = [
+ "heapless",
+]
 
 [[package]]
 name = "rume_macros"
