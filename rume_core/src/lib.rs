@@ -7,7 +7,6 @@ mod sort;
 pub mod io;
 pub use io::*;
 
-#[macro_use]
 pub mod proc;
 pub use proc::*;
 
@@ -15,6 +14,5 @@ pub use proc::*;
 pub mod chain;
 pub use chain::*;
 
-#[macro_use]
 pub mod endpoints;
 pub use endpoints::*;

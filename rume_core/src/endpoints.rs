@@ -1,4 +1,5 @@
 use crate::*;
+pub use heapless;
 pub use heapless::{
     consts::*,
     spsc::{Consumer, Producer, Queue},
@@ -72,48 +73,61 @@ impl Processor for OutputEndpoint {
     fn process(&mut self) {}
 }
 
-#[macro_export]
-macro_rules! input_endpoint {
-    () => {{
-        use heapless::{i, spsc};
-        static mut ENDPOINT: $crate::InputStream = spsc::Queue(i::Queue::new());
+/// Mainly for internal use to wrap
+/// the creation of static data used
+/// for endpoints. That data container
+/// is then split into a pair:
+/// `(producer, consumer)`
+///
+/// ```
+///     const VALUE_TO_PASS: f32 = 3.14;
+///
+///     let (in_producer, in_consumer) = endpoint!(InputStream);
+///     let (out_producer, out_consumer) = endpoint!(OutputStream);
+///
+///     in_producer.enqueue(VALUE_TO_PASS).unwrap();
+///     let value = in_consumer.dequeue().unwrap();
+///     out_producer.enqueue(value).unwrap();
+///
+///     assert_eq!(out_consumer.dequeue().unwrap(), VALUE_TO_PASS);
+///
+/// ```
+macro_rules! endpoint {
+    ($endpoint_type: ty) => {{
+        use $crate::heapless::{i, spsc};
+        static mut ENDPOINT: $endpoint_type = spsc::Queue(i::Queue::new());
         unsafe { ENDPOINT.split() }
     }};
 }
 
-#[macro_export]
-macro_rules! output_endpoint {
-    () => {{
-        use heapless::{i, spsc};
-        static mut ENDPOINT: $crate::OutputStream = spsc::Queue(i::Queue::new());
-        unsafe { ENDPOINT.split() }
-    }};
+/// Create an input endpoint producer and consumer.
+///
+/// ```
+///     const VALUE_TO_PASS: f32 = 3.14;
+///
+///     let (mut producer, consumer) = make_input_endpoint();
+///     let processor = make_processor(InputEndpoint::new(consumer));
+///
+///     producer.enqueue(VALUE_TO_PASS).unwrap();
+///     processor.borrow_mut().process();
+///
+///     assert_eq!(InputEndpointOutput.get(processor.clone()), VALUE_TO_PASS);
+/// ```
+pub fn make_input_endpoint() -> (InputStreamProducer, InputStreamConsumer) {
+    endpoint!(InputStream)
 }
 
-#[cfg(test)]
-mod test {
-    use super::*;
-
-    #[test]
-    fn input_endpoint_consumes_data() {
-        const VALUE_TO_PASS: f32 = 3.14;
-        let (mut producer, consumer) = input_endpoint!();
-        let processor = make_processor(InputEndpoint::new(consumer));
-
-        producer.enqueue(VALUE_TO_PASS).unwrap();
-        processor.borrow_mut().process();
-
-        assert_eq!(InputEndpointOutput.get(processor.clone()), VALUE_TO_PASS);
-    }
-
-    #[test]
-    fn output_endpoint_produces_data() {
-        const VALUE_TO_PASS: f32 = 3.14;
-        let (producer, mut consumer) = output_endpoint!();
-        let processor = make_processor(OutputEndpoint::new(producer));
-
-        OutputEndpointInput.set(processor.clone(), VALUE_TO_PASS);
-
-        assert_eq!(consumer.dequeue().unwrap(), VALUE_TO_PASS);
-    }
+/// Create an output endpoint producer and consumer.
+///
+/// ```
+///     const VALUE_TO_PASS: f32 = 3.14;
+///
+///     let (producer, mut consumer) = make_output_endpoint();
+///     let processor = make_processor(OutputEndpoint::new(producer));
+///
+///     OutputEndpointInput.set(processor.clone(), VALUE_TO_PASS);
+///     assert_eq!(consumer.dequeue().unwrap(), VALUE_TO_PASS);
+/// ```
+pub fn make_output_endpoint() -> (OutputStreamProducer, OutputStreamConsumer) {
+    endpoint!(OutputStream)
 }
