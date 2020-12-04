@@ -155,7 +155,7 @@ macro_rules! input {
         impl $crate::Input<$crate::DynProc> for $input_name {
             fn set(&self, proc: $crate::SharedProc<$crate::DynProc>, value: f32) {
                 let processor = unsafe { &mut (*(proc.as_ptr() as *mut $processor)) };
-                ($setter)(processor, value);
+                $setter(processor, value);
             }
         }
     };
@@ -196,7 +196,7 @@ macro_rules! output {
         impl $crate::Output<$crate::DynProc> for $output_name {
             fn get(&self, proc: $crate::SharedDynProc) -> f32 {
                 let processor = unsafe { &mut (*(proc.as_ptr() as *mut $processor)) };
-                ($getter)(processor)
+                $getter(processor)
             }
         }
     };

@@ -218,7 +218,7 @@ impl GraphEndpoints {
             struct_init.push_str(&format!("{}: {}_{}, ", name, name, suffix));
         }
 
-        struct_init.push_str("}");
+        struct_init.push('}');
         struct_init
     }
 }
@@ -267,7 +267,7 @@ impl ParsableDecl for GraphDecl {
                     self.connections = ConnectionsDecl::new(&mut group)
                 }
             }
-            if let None = tokens.by_ref().next() {
+            if tokens.by_ref().next().is_none() {
                 break;
             }
         }
