@@ -40,19 +40,27 @@ fn extract_group(token: &mut IntoIter, error_message: &str) -> IntoIter {
     .into_iter()
 }
 
-pub fn graph(input: TokenStream) -> TokenStream {
-    let mut tokens = input.into_iter();
+enum Keyword {
+    Inputs,
+    Outputs,
+    Processors,
+    Connections,
+}
 
-    //
-    //  Construct list of endpoints.
-    //
-    //  ```
-    //      endpoints: {
-    //          audio_out: OutputEndpoint::new(audio_out_producer),
-    //      },
-    //  ```
-    //
-    let _endpoints_keyword = tokens
+impl Keyword {
+    pub fn parse(token: TokenTree) -> Result<Self, ()> {
+        match token.to_string().as_str() {
+            "inputs" => Ok(Keyword::Inputs),
+            "outputs" => Ok(Keyword::Outputs),
+            "processors" => Ok(Keyword::Processors),
+            "connections" => Ok(Keyword::Connections),
+            _ => Err(()),
+        }
+    }
+}
+
+fn parse_group(tokens: &mut IntoIter) -> (Keyword, IntoIter) {
+    let keyword = tokens
         .next()
         .expect("The graph declaration must start with a list of endpoints delimited by the 'endpoints' keyword");
 
@@ -60,194 +68,241 @@ pub fn graph(input: TokenStream) -> TokenStream {
         .next()
         .expect("Expected ':' character after 'endpoints' keyword");
 
-    let missing_endpoint_group_message =
-        "Expected a group of tokens delimited by braces '{}' after 'endpoints:'";
+    let missing_endpoint_group_message = "Expected a group of declaration delimited by braces '{}'";
 
-    let mut endpoint_tokens = extract_group(tokens.by_ref(), missing_endpoint_group_message);
-    let mut endpoint_names = Vec::<String>::new();
-    let mut endpoint_initialisers = Vec::<String>::new();
-    let num_endpoints = num_chars_in(endpoint_tokens.by_ref(), ',');
-
-    for _ in 0..num_endpoints {
-        let endpoint_name = endpoint_tokens
-            .by_ref()
-            .next()
-            .expect("Expected a name for this endpoint");
-        endpoint_names.push(endpoint_name.to_string());
-
-        let _colon = endpoint_tokens
-            .by_ref()
-            .next()
-            .expect("Expected ':' character after 'endpoints' keyword");
-
-        endpoint_initialisers.push(consume_until_char(endpoint_tokens.by_ref(), ','));
-    }
-
-    let _comma = tokens
-        .by_ref()
-        .next()
-        .expect("Expected ',' character after 'endpoints'");
-
-    //
-    //  Construct list of processors.
-    //
-    //  ```
-    //      processors: {
-    //          sine: Sine::default(),
-    //          tanh: Tanh::default(),
-    //      }
-    //  ```
-    //
-
-    let _processor_keyword = tokens
-        .next()
-        .expect("The graph declaration must have with a list of processors delimited by the 'processors' keyword after the endpoints declaration");
-
-    let _colon = tokens
-        .next()
-        .expect("Expected ':' character after 'processors' keyword");
-
-    let missing_processor_group_message =
-        "Expected a group of tokens delimited by braces '{}' after 'processors:'";
-
-    let mut processor_tokens = extract_group(tokens.by_ref(), missing_processor_group_message);
-    let mut processor_names = Vec::<String>::new();
-    let mut processor_initialisers = Vec::<String>::new();
-    let num_processors = num_chars_in(processor_tokens.by_ref(), ',');
-
-    for _ in 0..num_processors {
-        let processor_name = processor_tokens
-            .by_ref()
-            .next()
-            .expect("Expected a name for this processor");
-        processor_names.push(processor_name.to_string());
-
-        let _semi_colon = processor_tokens
-            .by_ref()
-            .next()
-            .expect("Expected ':' character after an processor name");
-
-        processor_initialisers.push(consume_until_char(processor_tokens.by_ref(), ','));
-    }
-
-    let _comma = tokens
-        .by_ref()
-        .next()
-        .expect("Expected ',' character after 'processors'");
-
-    //
-    //   Construct list of connections.
-    //
-    //  ```
-    //      connections: {
-    //          sine.output -> tanh.input,
-    //          tanh.output -> audio_out,
-    //      }
-    //  ```
-
-    let _connections_keyword = tokens
-        .next()
-        .expect("The graph declaration must have with a list of connections delimited by the 'connections' keyword after the processors declaration");
-
-    let _colon = tokens
-        .next()
-        .expect("Expected ':' character after 'connections' keyword");
-
-    let missing_connection_group_message =
-        "Expected a group of tokens delimited by braces '{}' after 'connections:'";
-
-    let mut connection_tokens = extract_group(tokens.by_ref(), missing_connection_group_message);
-    let mut tx_processors = Vec::<String>::new();
-    let mut tx_ports = Vec::<String>::new();
-    let mut rx_processors = Vec::<String>::new();
-    let mut rx_ports = Vec::<String>::new();
-    let num_connections = num_chars_in(connection_tokens.by_ref(), '>');
-
-    for _ in 0..num_connections {
-        let tx_processor = connection_tokens
-            .by_ref()
-            .next()
-            .expect("Expected a name for this processor");
-        tx_processors.push(tx_processor.to_string());
-
-        tx_ports.push(consume_until_char(connection_tokens.by_ref(), '-'));
-
-        let _arrow_second_char = connection_tokens
-            .by_ref()
-            .next()
-            .expect("Expected '>' after '-' to form '->'");
-
-        let rx_processor = connection_tokens
-            .by_ref()
-            .next()
-            .expect("Expected a name for this processor");
-        rx_processors.push(rx_processor.to_string());
-
-        rx_ports.push(consume_until_char(connection_tokens.by_ref(), ','));
-    }
-
-    //
-    // Construct SignalChain object.
-    //
-    let mut graph_as_string = String::new();
-
-    graph_as_string.push('{');
-    graph_as_string.push('\n');
-    graph_as_string.push_str("use std::{rc::{Rc, Weak}, cell::RefCell};\n");
-    graph_as_string.push('\n');
-
-    for (i, name) in endpoint_names.iter().enumerate() {
-        graph_as_string.push_str(&format!(
-            "\tlet {} = Rc::new(RefCell::new({}));\n",
-            name, endpoint_initialisers[i]
-        ));
-    }
-
-    for (i, name) in processor_names.iter().enumerate() {
-        graph_as_string.push_str(&format!(
-            "\tlet {} = Rc::new(RefCell::new({}));\n",
-            name, processor_initialisers[i]
-        ));
-    }
-
-    graph_as_string.push_str("\trume::SignalChainBuilder::default()\n");
-
-    for name in endpoint_names {
-        graph_as_string.push_str(&format!("\t\t.processor({}.clone())\n", name));
-    }
-
-    for name in processor_names {
-        graph_as_string.push_str(&format!("\t\t.processor({}.clone())\n", name));
-    }
-
-    for i in 0..tx_ports.len() {
-        graph_as_string.push_str(&format!(
-            "\t\t.connection(
-                \trume::OutputPort {{ proc: {}.clone(), port: Box::new({}.clone().borrow(){}.clone()) }},
-                \trume::InputPort {{ proc: {}.clone(), port: Box::new({}.clone().borrow(){}.clone()) }}
-            \t)\n",
-            tx_processors[i],
-            tx_processors[i],
-            tx_ports[i],
-            rx_processors[i],
-            rx_processors[i],
-            rx_ports[i],
-        ));
-    }
-
-    graph_as_string.push_str("\t\t.build()\n");
-    graph_as_string.push('}');
-    graph_as_string.push('\n');
-
-    // println!("{}", graph_as_string);
-
-    graph_as_string.parse().unwrap()
+    (
+        Keyword::parse(keyword).expect("Unexpected keyword"),
+        extract_group(tokens.by_ref(), missing_endpoint_group_message),
+    )
 }
 
-#[cfg(test)]
-mod tests {
-    #[test]
-    fn it_works() {
-        assert_eq!(2 + 2, 4);
+trait ParsableDecl: Default {
+    fn new(tokens: &mut IntoIter) -> Self {
+        let mut decl = Self::default();
+        decl.parse(tokens);
+        decl
     }
+
+    fn parse(&mut self, tokens: &mut IntoIter);
+}
+
+#[derive(Debug, Default)]
+struct ProcessorDecl {
+    name: String,
+    initialiser: String,
+}
+
+#[derive(Debug, Default)]
+struct ProcessorsDecl {
+    decls: Vec<ProcessorDecl>,
+}
+
+impl ParsableDecl for ProcessorsDecl {
+    fn parse(&mut self, tokens: &mut IntoIter) {
+        let num_processors = num_chars_in(tokens.by_ref(), ',');
+
+        for _ in 0..num_processors {
+            let name = tokens
+                .by_ref()
+                .next()
+                .expect("Expected a name for this processor")
+                .to_string();
+
+            let _semi_colon = tokens
+                .by_ref()
+                .next()
+                .expect("Expected ':' character after an processor name");
+
+            let initialiser = consume_until_char(tokens.by_ref(), ',');
+
+            self.decls.push(ProcessorDecl { name, initialiser });
+        }
+    }
+}
+
+#[derive(Debug, Default)]
+struct ConnectionDecl {
+    tx_processor: String,
+    tx_port: String,
+    rx_processor: String,
+    rx_port: String,
+}
+
+#[derive(Debug, Default)]
+struct ConnectionsDecl {
+    decls: Vec<ConnectionDecl>,
+}
+
+impl ParsableDecl for ConnectionsDecl {
+    fn parse(&mut self, tokens: &mut IntoIter) {
+        let num_connections = num_chars_in(tokens.by_ref(), '>');
+
+        for _ in 0..num_connections {
+            let tx_processor = tokens
+                .by_ref()
+                .next()
+                .expect("Expected a name for this processor")
+                .to_string();
+
+            let tx_port = consume_until_char(tokens.by_ref(), '-');
+
+            let _arrow_second_char = tokens
+                .by_ref()
+                .next()
+                .expect("Expected '>' after '-' to form '->'");
+
+            let rx_processor = tokens
+                .by_ref()
+                .next()
+                .expect("Expected a name for this processor")
+                .to_string();
+
+            let rx_port = consume_until_char(tokens.by_ref(), ',');
+
+            self.decls.push(ConnectionDecl {
+                tx_processor,
+                tx_port,
+                rx_processor,
+                rx_port,
+            })
+        }
+    }
+}
+
+#[derive(Debug, Default)]
+struct GraphEndpoints {
+    names: Vec<String>,
+}
+
+impl ParsableDecl for GraphEndpoints {
+    fn parse(&mut self, tokens: &mut IntoIter) {
+        let num_endpoints = num_chars_in(tokens.by_ref(), ',');
+
+        for _ in 0..num_endpoints {
+            let name = tokens
+                .by_ref()
+                .next()
+                .expect("Expected a name for this endpoint")
+                .to_string();
+
+            let _comma = tokens
+                .by_ref()
+                .next()
+                .expect("Expected ',' character after an endpoint name");
+
+            self.names.push(name);
+        }
+    }
+}
+
+#[derive(Debug, Default)]
+struct GraphDecl {
+    inputs: Option<GraphEndpoints>,
+    outputs: Option<GraphEndpoints>,
+    processors: Option<ProcessorsDecl>,
+    connections: ConnectionsDecl,
+}
+
+impl ParsableDecl for GraphDecl {
+    fn parse(&mut self, mut tokens: &mut IntoIter) {
+        loop {
+            match parse_group(&mut tokens) {
+                (Keyword::Inputs, mut group) => self.inputs = Some(GraphEndpoints::new(&mut group)),
+                (Keyword::Outputs, mut group) => {
+                    self.outputs = Some(GraphEndpoints::new(&mut group))
+                }
+                (Keyword::Processors, mut group) => {
+                    self.processors = Some(ProcessorsDecl::new(&mut group))
+                }
+                (Keyword::Connections, mut group) => {
+                    self.connections = ConnectionsDecl::new(&mut group)
+                }
+            }
+            if let None = tokens.by_ref().next() {
+                break;
+            }
+        }
+    }
+}
+
+impl ToString for GraphDecl {
+    fn to_string(&self) -> String {
+        let mut graph_as_string = String::new();
+
+        graph_as_string.push('{');
+        graph_as_string.push('\n');
+
+        for name in &self.inputs.as_ref().unwrap().names {
+            let endpoint = format!(
+                "let ({}_producer, {}_consumer) = rume::make_input_endpoint();",
+                name, name
+            );
+            let processor = format!(
+                "let {} = rume::make_processor(rume::InputEndpoint::new({}_consumer));",
+                name, name
+            );
+
+            graph_as_string.push_str(&format!("\t{}\t\n{}\n", endpoint, processor));
+        }
+
+        for name in &self.outputs.as_ref().unwrap().names {
+            let endpoint = format!(
+                "let ({}_producer, {}_consumer) = rume::make_output_endpoint();",
+                name, name
+            );
+            let processor = format!(
+                "let {} = rume::make_processor(rume::OutputEndpoint::new({}_producer));",
+                name, name
+            );
+
+            graph_as_string.push_str(&format!("\t{}\t\n{}\n", endpoint, processor));
+        }
+
+        for decl in &self.processors.as_ref().unwrap().decls {
+            graph_as_string.push_str(&format!(
+                "\tlet {} = rume::make_processor({});\n",
+                decl.name, decl.initialiser
+            ));
+        }
+
+        graph_as_string.push_str("\trume::SignalChainBuilder::default()\n");
+
+        for name in &self.inputs.as_ref().unwrap().names {
+            graph_as_string.push_str(&format!("\t\t.processor({}.clone())\n", name));
+        }
+
+        for name in &self.outputs.as_ref().unwrap().names {
+            graph_as_string.push_str(&format!("\t\t.processor({}.clone())\n", name));
+        }
+
+        for decl in &self.processors.as_ref().unwrap().decls {
+            graph_as_string.push_str(&format!("\t\t.processor({}.clone())\n", decl.name));
+        }
+
+        for decl in &self.connections.decls {
+            graph_as_string.push_str(&format!(
+                "\t\t.connection(
+                    \trume::OutputPort {{ proc: {}.clone(), port: Box::new({}.clone().borrow(){}.clone()) }},
+                    \trume::InputPort {{ proc: {}.clone(), port: Box::new({}.clone().borrow(){}.clone()) }}
+                \t)\n",
+                decl.tx_processor,
+                decl.tx_processor,
+                decl.tx_port,
+                decl.rx_processor,
+                decl.rx_processor,
+                decl.rx_port,
+            ));
+        }
+
+        graph_as_string.push_str("\t\t.build()\n");
+        graph_as_string.push('}');
+        graph_as_string.push('\n');
+        graph_as_string
+    }
+}
+
+pub fn graph(input: TokenStream) -> TokenStream {
+    let mut tokens = input.into_iter();
+    let graph = GraphDecl::new(&mut tokens);
+    graph.to_string().parse().unwrap()
 }
