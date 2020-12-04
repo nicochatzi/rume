@@ -246,9 +246,9 @@ impl ParsableDecl for GraphEndpoints {
 
 #[derive(Debug, Default)]
 struct GraphDecl {
-    inputs: Option<GraphEndpoints>,
-    outputs: Option<GraphEndpoints>,
-    processors: Option<ProcessorsDecl>,
+    inputs: GraphEndpoints,
+    outputs: GraphEndpoints,
+    processors: ProcessorsDecl,
     connections: ConnectionsDecl,
 }
 
@@ -256,12 +256,10 @@ impl ParsableDecl for GraphDecl {
     fn parse(&mut self, mut tokens: &mut IntoIter) {
         loop {
             match parse_group(&mut tokens) {
-                (Keyword::Inputs, mut group) => self.inputs = Some(GraphEndpoints::new(&mut group)),
-                (Keyword::Outputs, mut group) => {
-                    self.outputs = Some(GraphEndpoints::new(&mut group))
-                }
+                (Keyword::Inputs, mut group) => self.inputs = GraphEndpoints::new(&mut group),
+                (Keyword::Outputs, mut group) => self.outputs = GraphEndpoints::new(&mut group),
                 (Keyword::Processors, mut group) => {
-                    self.processors = Some(ProcessorsDecl::new(&mut group))
+                    self.processors = ProcessorsDecl::new(&mut group)
                 }
                 (Keyword::Connections, mut group) => {
                     self.connections = ConnectionsDecl::new(&mut group)
@@ -280,7 +278,7 @@ impl ToString for GraphDecl {
 
         make_graph_fn.push_str("pub fn make() -> (rume::SignalChain, Inputs, Outputs) {\n");
 
-        for name in &self.inputs.as_ref().unwrap().names {
+        for name in &self.inputs.names {
             let endpoint = format!(
                 "\tlet ({}_producer, {}_consumer) = rume::make_input_endpoint();\n",
                 name, name
@@ -293,7 +291,7 @@ impl ToString for GraphDecl {
             make_graph_fn.push_str(&format!("\t{}\t\n{}\n", endpoint, processor));
         }
 
-        for name in &self.outputs.as_ref().unwrap().names {
+        for name in &self.outputs.names {
             let endpoint = format!(
                 "\tlet ({}_producer, {}_consumer) = rume::make_output_endpoint();\n",
                 name, name
@@ -306,7 +304,7 @@ impl ToString for GraphDecl {
             make_graph_fn.push_str(&format!("\t{}\t\n{}\n", endpoint, processor));
         }
 
-        for decl in &self.processors.as_ref().unwrap().decls {
+        for decl in &self.processors.decls {
             make_graph_fn.push_str(&format!(
                 "\tlet {} = rume::make_processor({});\n",
                 decl.name, decl.initialiser
@@ -315,15 +313,15 @@ impl ToString for GraphDecl {
 
         make_graph_fn.push_str("\tlet chain = rume::SignalChainBuilder::default()\n");
 
-        for name in &self.inputs.as_ref().unwrap().names {
+        for name in &self.inputs.names {
             make_graph_fn.push_str(&format!("\t\t.processor({}.clone())\n", name));
         }
 
-        for name in &self.outputs.as_ref().unwrap().names {
+        for name in &self.outputs.names {
             make_graph_fn.push_str(&format!("\t\t.processor({}.clone())\n", name));
         }
 
-        for decl in &self.processors.as_ref().unwrap().decls {
+        for decl in &self.processors.decls {
             make_graph_fn.push_str(&format!("\t\t.processor({}.clone())\n", decl.name));
         }
 
@@ -345,32 +343,20 @@ impl ToString for GraphDecl {
         make_graph_fn.push_str("\t\t.build();\n");
         make_graph_fn.push_str(&format!(
             "\t( chain, {}, {} )",
-            self.inputs
-                .as_ref()
-                .unwrap()
-                .to_struct_init(GraphEndpointsKind::Inputs),
-            self.outputs
-                .as_ref()
-                .unwrap()
-                .to_struct_init(GraphEndpointsKind::Outputs),
+            self.inputs.to_struct_init(GraphEndpointsKind::Inputs),
+            self.outputs.to_struct_init(GraphEndpointsKind::Outputs),
         ));
         make_graph_fn.push('}');
         make_graph_fn.push('\n');
 
         let input_struct_decl = format!(
             "\t{}\n",
-            self.inputs
-                .as_ref()
-                .unwrap()
-                .to_struct_decl(GraphEndpointsKind::Inputs)
+            self.inputs.to_struct_decl(GraphEndpointsKind::Inputs)
         );
 
         let output_struct_decl = format!(
             "\t{}\n",
-            self.outputs
-                .as_ref()
-                .unwrap()
-                .to_struct_decl(GraphEndpointsKind::Outputs)
+            self.outputs.to_struct_decl(GraphEndpointsKind::Outputs)
         );
 
         format!(
@@ -383,6 +369,5 @@ impl ToString for GraphDecl {
 pub fn graph(input: TokenStream) -> TokenStream {
     let mut tokens = input.into_iter();
     let graph = GraphDecl::new(&mut tokens);
-    println!("{}", graph.to_string());
     graph.to_string().parse().unwrap()
 }

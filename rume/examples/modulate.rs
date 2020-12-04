@@ -12,10 +12,10 @@ const BUFFER_TIME: f32 = BUFFER_SIZE as f32 / SAMPLE_RATE as f32;
 
 #[rume::processor]
 pub struct Lpf {
-    #[rume::processor_input]
+    #[input]
     previous: f32,
 
-    #[rume::processor_output]
+    #[output]
     current: f32,
 }
 

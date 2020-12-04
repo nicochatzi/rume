@@ -2,7 +2,7 @@ use core::*;
 
 #[macros::processor]
 pub struct Value {
-    #[macros::processor_output]
+    #[output]
     value: f32,
 }
 
@@ -21,13 +21,13 @@ impl Value {
 
 #[macros::processor]
 pub struct Sine {
-    #[macros::processor_input]
+    #[input]
     frequency: f32,
 
-    #[macros::processor_input]
+    #[input]
     amplitude: f32,
 
-    #[macros::processor_output]
+    #[output]
     sample: f32,
 
     phase: f32,

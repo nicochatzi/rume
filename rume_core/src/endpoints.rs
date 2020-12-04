@@ -80,6 +80,8 @@ impl Processor for OutputEndpoint {
 /// `(producer, consumer)`
 ///
 /// ```
+///     use rume_core::*;
+///
 ///     const VALUE_TO_PASS: f32 = 3.14;
 ///
 ///     let (in_producer, in_consumer) = endpoint!(InputStream);
@@ -103,6 +105,8 @@ macro_rules! endpoint {
 /// Create an input endpoint producer and consumer.
 ///
 /// ```
+///     use rume_core::*;
+///
 ///     const VALUE_TO_PASS: f32 = 3.14;
 ///
 ///     let (mut producer, consumer) = make_input_endpoint();
@@ -120,6 +124,8 @@ pub fn make_input_endpoint() -> (InputStreamProducer, InputStreamConsumer) {
 /// Create an output endpoint producer and consumer.
 ///
 /// ```
+///     use rume_core::*;
+///
 ///     const VALUE_TO_PASS: f32 = 3.14;
 ///
 ///     let (producer, mut consumer) = make_output_endpoint();

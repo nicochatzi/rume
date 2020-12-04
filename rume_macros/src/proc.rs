@@ -35,14 +35,14 @@ pub fn processor(_attr: TokenStream, item: TokenStream) -> TokenStream {
 
     for field in struct_fields.iter_mut() {
         if !field.attrs.is_empty() {
-            let attribute_name = field.attrs[0].path.segments[1].ident.clone();
+            let attribute_name = field.attrs[0].path.segments[0].ident.clone();
 
-            if attribute_name == "processor_input" || attribute_name == "processor_sample" {
+            if attribute_name == "input" || attribute_name == "sample" {
                 let (input_enum, input) = parse_io(field, "Input");
                 input_enums.push(input_enum);
                 inputs.push(input);
             }
-            if attribute_name == "processor_output" || attribute_name == "processor_sample" {
+            if attribute_name == "output" || attribute_name == "sample" {
                 let (output_enum, output) = parse_io(field, "Output");
                 output_enums.push(output_enum);
                 outputs.push(output)
@@ -81,18 +81,3 @@ pub fn processor(_attr: TokenStream, item: TokenStream) -> TokenStream {
     })
     .into()
 }
-
-// #(
-//     input! { #processor, #input_enums,
-//         |proc: &mut #processor, value: f32| {
-//             proc.#inputs = value;
-//         }
-//     }
-// )*
-// #(
-//     output! { #processor, #output_enums,
-//         |proc: &mut #processor| -> f32 {
-//             proc.#outputs
-//         }
-//     }
-// )*
