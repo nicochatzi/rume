@@ -4,3 +4,4 @@ target
 .env
 coveralls*
 *.prof
+test.wav

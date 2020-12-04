@@ -1,8 +1,8 @@
 use cpal::traits::{DeviceTrait, HostTrait, StreamTrait};
 use rume::{Processor, Renderable};
 
-fn build_graph() -> (rume::SignalChain, rume::OutputStreamConsumer) {
-    let beep = rume::graph! {
+pub mod synth {
+    rume::graph! {
         inputs: {},
         outputs: {
             out,
@@ -17,19 +17,18 @@ fn build_graph() -> (rume::SignalChain, rume::OutputStreamConsumer) {
             amp.output   ->  sine.input.1,
             sine.output  ->  out.input,
         }
-    };
-    (beep, consumer)
+    }
 }
 
 fn main() {
     let (device, config) = setup_cpal();
-    let (mut graph, consumer) = build_graph();
+    let (mut graph, _, outputs) = synth::make();
     graph.prepare((config.sample_rate().0 as f32).into());
 
     match config.sample_format() {
-        cpal::SampleFormat::F32 => run::<f32>(&device, &config.into(), graph, consumer).unwrap(),
-        cpal::SampleFormat::I16 => run::<i16>(&device, &config.into(), graph, consumer).unwrap(),
-        cpal::SampleFormat::U16 => run::<u16>(&device, &config.into(), graph, consumer).unwrap(),
+        cpal::SampleFormat::F32 => run::<f32>(&device, &config.into(), graph, outputs.out).unwrap(),
+        cpal::SampleFormat::I16 => run::<i16>(&device, &config.into(), graph, outputs.out).unwrap(),
+        cpal::SampleFormat::U16 => run::<u16>(&device, &config.into(), graph, outputs.out).unwrap(),
     }
 }
 
