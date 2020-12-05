@@ -591,12 +591,10 @@ impl ToString for GraphDecl {
         let input_struct_decl = format!("\t{}\n", self.inputs.to_struct_decl());
         let output_struct_decl = format!("\t{}\n", self.outputs.to_struct_decl());
 
-        let output = format!(
+        format!(
             "{}\n{}\n{}\n",
             input_struct_decl, output_struct_decl, build_graph_fn
-        );
-        println!("{}", output);
-        output
+        )
     }
 }
 
