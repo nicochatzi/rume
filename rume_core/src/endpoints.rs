@@ -49,6 +49,7 @@ pub struct InputEndpoint {
     value: f32,
     range: Option<RangedData>,
     smooth: Option<ValueSmoother>,
+    kind: InputEndpointKind,
 }
 
 output! { InputEndpoint, InputEndpointOutput,
@@ -65,6 +66,7 @@ impl InputEndpoint {
             value: 0.0,
             range: None,
             smooth: None,
+            kind: InputEndpointKind::Follow,
         }
     }
 }
@@ -94,8 +96,13 @@ impl InputEndpoint {
     }
 
     fn process_value(&mut self) {
-        if let Some(smooth) = self.smooth.as_mut() {
-            (*smooth).process(&mut self.value);
+        match self.kind {
+            InputEndpointKind::Trigger => self.value = 0.0,
+            InputEndpointKind::Follow => {
+                if let Some(smooth) = self.smooth.as_mut() {
+                    (*smooth).process(&mut self.value);
+                }
+            }
         }
     }
 }
@@ -185,6 +192,11 @@ impl InputEndpointBuilder {
         self
     }
 
+    pub fn kind(mut self, kind: InputEndpointKind) -> Self {
+        self.inner.kind = kind;
+        self
+    }
+
     pub fn range(mut self, range: Range<f32>) -> Self {
         self.inner.range = Some(RangedData::new(range));
         self
@@ -252,6 +264,11 @@ impl ValueSmoother {
             *value = self.target;
         }
     }
+}
+
+pub enum InputEndpointKind {
+    Follow,
+    Trigger,
 }
 
 #[cfg(test)]
@@ -331,5 +348,22 @@ mod test {
     }
 
     #[test]
-    fn input_endpoint_with_all_options() {}
+    fn input_endpoint_as_trigger_falls_back_to_zero() {
+        const TRIGGER_VALUE: f32 = 1000.0;
+
+        let (mut producer, consumer) = make_input_endpoint();
+        let processor = make_processor(
+            InputEndpointBuilder::new(consumer)
+                .kind(InputEndpointKind::Trigger)
+                .build(),
+        );
+
+        producer.enqueue(TRIGGER_VALUE).unwrap();
+
+        processor.borrow_mut().process();
+        assert_eq!(InputEndpointOutput.get(processor.clone()), TRIGGER_VALUE);
+
+        processor.borrow_mut().process();
+        assert_eq!(InputEndpointOutput.get(processor.clone()), 0.0);
+    }
 }
