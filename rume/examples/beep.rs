@@ -4,8 +4,8 @@ use rume::{Processor, Renderable};
 pub mod synth {
     rume::graph! {
         inputs: {
-            freq: { init: 220.0, range: 64.0..880.0, smooth: 10 },
-            amp:  { init:   0.1, range:  0.0..0.8,   smooth: 10 },
+            freq: { init: 220.0, range: 64.0..880.0, smooth: 10, kind: follow },
+            amp:  { init:   0.1, range:  0.0..0.8,   smooth: 10 },  // by default kind is follow
         },
         outputs: {
             out,

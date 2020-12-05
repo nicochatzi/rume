@@ -72,7 +72,10 @@ impl InputEndpoint {
 }
 
 impl Processor for InputEndpoint {
-    fn prepare(&mut self, _: AudioConfig) {}
+    fn prepare(&mut self, _: AudioConfig) {
+        self.set_value(self.value);
+    }
+
     fn process(&mut self) {
         match self.stream.dequeue() {
             Some(value) => self.set_value(value),

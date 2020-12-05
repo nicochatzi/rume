@@ -212,7 +212,10 @@ impl GraphInputOption {
         match kind.to_string().as_str() {
             "follow" => *self = GraphInputOption::Kind(InputEndpointKind::Follow),
             "trigger" => *self = GraphInputOption::Kind(InputEndpointKind::Trigger),
-            _ => panic!("Unsupported input endpoint kind"),
+            _ => panic!(
+                "Unsupported input endpoint kind: {}",
+                kind.to_string().as_str()
+            ),
         }
     }
 
@@ -272,7 +275,7 @@ impl GraphInputOption {
 
     pub fn to_init(&self) -> String {
         match self {
-            GraphInputOption::Kind(kind) => format!(".kind({:#?})", kind),
+            GraphInputOption::Kind(kind) => format!(".kind(rume::InputEndpointKind::{:#?})", kind),
             GraphInputOption::Range(range) => {
                 format!(".range({:.32}..{:.32})", range.start, range.end)
             }
@@ -340,17 +343,17 @@ impl GraphInput {
         let mut endpoint_init = String::new();
 
         endpoint_init.push_str(&format!(
-            "let {} = rume::make_processor(rume::InputEndpointBuilder::new({}_consumer)",
+            "let {} = rume::make_processor(rume::InputEndpointBuilder::new({}_consumer)\n",
             self.name, self.name
         ));
 
         if self.options.is_some() {
             for option in &self.options.as_ref().unwrap().inner {
-                endpoint_init.push_str(&option.to_init());
+                endpoint_init.push_str(&format!("\t\t{}\n", option.to_init()));
             }
         }
 
-        endpoint_init.push_str(".build());");
+        endpoint_init.push_str("\t\t.build());");
         endpoint_init
     }
 }
