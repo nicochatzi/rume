@@ -3,7 +3,7 @@ use rume::{Processor, Renderable};
 
 pub mod synth {
     rume::graph! {
-        inputs: {},
+        inputs: { },
         outputs: {
             out,
         },
