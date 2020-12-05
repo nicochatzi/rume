@@ -383,7 +383,7 @@ impl GraphInputs {
 
     pub fn to_struct_decl(&self) -> String {
         let mut struct_decl = String::new();
-        struct_decl.push_str(&format!("\npub struct Inputs {{\n"));
+        struct_decl.push_str("\npub struct Inputs {\n");
 
         for decl in &self.decls {
             struct_decl.push_str(&format!(
@@ -398,7 +398,7 @@ impl GraphInputs {
 
     pub fn to_struct_init(&self) -> String {
         let mut struct_init = String::new();
-        struct_init.push_str(&format!("Inputs {{"));
+        struct_init.push_str("Inputs {");
 
         for decl in &self.decls {
             struct_init.push_str(&format!("{}: {}_producer, ", decl.name, decl.name));
@@ -467,7 +467,7 @@ impl GraphOutputs {
 
     pub fn to_struct_decl(&self) -> String {
         let mut struct_decl = String::new();
-        struct_decl.push_str(&format!("\npub struct Outputs {{\n"));
+        struct_decl.push_str("\npub struct Outputs {\n");
 
         for name in &self.names {
             struct_decl.push_str(&format!("\tpub {}: rume::OutputStreamConsumer,\n", name));
@@ -479,7 +479,7 @@ impl GraphOutputs {
 
     pub fn to_struct_init(&self) -> String {
         let mut struct_init = String::new();
-        struct_init.push_str(&format!("Outputs {{"));
+        struct_init.push_str("Outputs {");
 
         for name in &self.names {
             struct_init.push_str(&format!("{}: {}_consumer, ", name, name));
