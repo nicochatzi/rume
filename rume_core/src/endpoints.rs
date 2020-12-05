@@ -266,6 +266,7 @@ impl ValueSmoother {
     }
 }
 
+#[derive(Debug)]
 pub enum InputEndpointKind {
     Follow,
     Trigger,

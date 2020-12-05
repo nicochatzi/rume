@@ -53,7 +53,7 @@ pub mod synth {
 }
 
 fn main() {
-    let (mut graph, mut params, mut outs) = synth::make();
+    let (mut graph, mut params, mut outs) = synth::build();
 
     // UI Thread
     std::thread::spawn(move || {
