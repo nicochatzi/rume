@@ -6,6 +6,7 @@ use alloc::{
 use core::{
     cell::RefCell,
     ops::{Deref, DerefMut},
+    option::Option,
 };
 
 #[derive(Clone, Copy)]
