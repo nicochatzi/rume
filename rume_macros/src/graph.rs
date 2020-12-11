@@ -1,5 +1,5 @@
-use core::InputEndpointKind;
-use std::ops::Range;
+use core::ops::Range;
+use rume_core::InputEndpointKind;
 
 use proc_macro::{token_stream::IntoIter, TokenStream, TokenTree};
 

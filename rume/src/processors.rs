@@ -1,6 +1,6 @@
-use core::*;
+use rume_core::*;
 
-#[macros::processor]
+#[rume_macros::processor]
 pub struct Value {
     #[output]
     value: f32,
@@ -19,7 +19,7 @@ impl Value {
     }
 }
 
-#[macros::processor]
+#[rume_macros::processor]
 pub struct Sine {
     #[input]
     frequency: f32,
@@ -40,7 +40,7 @@ impl Processor for Sine {
     }
 
     fn process(&mut self) {
-        const TWO_PI: f32 = 2.0_f32 * std::f32::consts::PI;
+        const TWO_PI: f32 = 2.0_f32 * core::f32::consts::PI;
         let increment = TWO_PI * self.frequency * self.sample_period;
         self.phase = (self.phase + increment) % TWO_PI;
         self.sample = self.phase.sin() * self.amplitude;
