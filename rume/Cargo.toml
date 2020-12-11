@@ -11,6 +11,10 @@ repository = "https://github.com/nicochatzi/rume"
 keywords = ["dsp", "audio", "graph", "no_std", "no-std"]
 categories = ["algorithms", "data-structures", "multimedia"]
 
+[features]
+default = ["std"]
+std = []
+
 [dependencies]
 rume_core = { path = "../rume_core" }
 rume_macros = { path = "../rume_macros" }

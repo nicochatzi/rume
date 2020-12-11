@@ -1,9 +1,9 @@
-#![no_std]
+#![cfg_attr(not(feature = "std"), no_std)]
 
 pub use rume_core::*;
 pub use rume_macros::*;
 
-#[cfg(target_os = "macos")]
+#[cfg(feature = "std")]
 pub mod processors;
-#[cfg(target_os = "macos")]
+#[cfg(feature = "std")]
 pub use processors::*;
