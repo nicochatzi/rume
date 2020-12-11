@@ -12,8 +12,8 @@ keywords = ["dsp", "audio", "graph"]
 categories = ["algorithms", "data-structures", "multimedia"]
 
 [dependencies]
-core = { package = "rume_core", path = "../rume_core" }
-macros = { package = "rume_macros", path = "../rume_macros" }
+rume_core = { path = "../rume_core" }
+rume_macros = { path = "../rume_macros" }
 
 [dev-dependencies]
 hound = "3.4.0"

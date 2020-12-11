@@ -54,7 +54,7 @@ impl<'a> TopologicalSort<'a> {
 #[cfg(test)]
 mod test {
     use super::*;
-    use std::cell::RefCell;
+    use core::cell::RefCell;
     use std::rc::{Rc, Weak};
 
     #[derive(Default, Debug, Clone)]

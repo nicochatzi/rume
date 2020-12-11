@@ -45,45 +45,49 @@ impl rume::Processor for Sine {
 ## Graphs
 
 ```rust
-let mut beep = rume::graph! {
-    endpoints: {
-        audio_out: rume::OutputEndpoint::new(producer),
-    },
-    processors: {
-        freq: rume::Value::new(440.0),
-        amp: rume::Value::new(0.8),
-        sine: Sine::default(),
-    },
-    connections: {
-        freq.output  ->  sine.input.0,
-        amp.output   ->  sine.input.1,
-        sine.output  ->  audio_out.input,
+pub mod synth {
+    rume::graph! {
+        inputs: {
+            freq: { init: 220.0, range: 64.0..880.0, smooth: 10 },
+            amp:  { init:   0.1, range:  0.0..0.8,   smooth: 10 },
+        },
+        outputs: {
+            out,
+        },
+        processors: {
+            sine: rume::Sine::default(),
+        },
+        connections: {
+            freq.output  ->  sine.input.0,
+            amp.output   ->  sine.input.1,
+            sine.output  ->  out.input,
+        }
     }
-};
-```
+}
 
-## Endpoints
+fn main() {
+    let (mut graph, inputs, outputs) = synth::build();
 
-```rust
-// Static lock-free queues
-let (mut frequency_producer, frequency_consumer) = rume::input!(FREQUENCY_ENDPOINT);
-let (audio_out_producer, mut audio_out_consumer) = rume::output!(AUDIO_OUT_ENDPOINT);
+    std::thread::spawn(move || {
+        for i in (110..440).step_by(2) {
+            inputs.freq.enqueue(i as f32).unwrap();
+            std::thread::sleep(std::time::Duration::from_millis(10));
+        }
+    });
 
-std::thread::spawn(move || {
-    for i in (110..440).step_by(2) {
-        // Input data into the graph from another thread
-        frequency_producer.enqueue(i as f32).unwrap();
-        std::thread::sleep(std::time::Duration::from_millis(10));
-    }
-});
+    std::thread::spawn(move || {
+        let config = rume::AudioConfig {
+            sample_rate: SAMPLE_RATE,
+            buffer_size: BUFFER_SIZE,
+            num_channels: 1,
+        }
+        graph.prepare(config);
+        graph.process();
 
-std::thread::spawn(move || {
-    graph.prepare(SAMPLE_RATE.into());
-    graph.render(BUFFER_SIZE);
+        while let Some(sample) = outputs.out.dequeue() {
+            println!("{}", sample);
+        }
+    }).join();`
+}
 
-    // Render and extract samples on another thread
-    while let Some(sample) = audio_out_consumer.dequeue() {
-        println!("{}", sample);
-    }
-}).join();
 ```

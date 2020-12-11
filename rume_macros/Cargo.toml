@@ -16,6 +16,6 @@ name = "rume_macros"
 proc-macro = true
 
 [dependencies]
-core = { package = "rume_core", path = "../rume_core" }
+rume_core = { path = "../rume_core" }
 quote = "1.0.7"
 syn = { version = "1.0.51", features = ["parsing"] }
