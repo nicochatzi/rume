@@ -1,5 +1,5 @@
 use crate::proc::*;
-use std::rc::Rc;
+use alloc::rc::Rc;
 
 pub type DynInputPort = InputPort<dyn Processor, dyn Input<dyn Processor>>;
 pub type DynOutputPort = OutputPort<dyn Processor, dyn Output<dyn Processor>>;

@@ -1,9 +1,12 @@
 use crate::io::*;
+use alloc::{
+    rc::{Rc, Weak},
+    vec::Vec,
+};
 use core::{
     cell::RefCell,
     ops::{Deref, DerefMut},
 };
-use std::rc::{Rc, Weak};
 
 #[derive(Clone, Copy)]
 pub struct AudioConfig {

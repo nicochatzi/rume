@@ -1,4 +1,5 @@
 use crate::{io::*, proc::*, sort::*};
+use alloc::vec::Vec;
 
 pub trait Renderable {
     fn render(&mut self, num_samples: usize);
