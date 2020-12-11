@@ -118,6 +118,7 @@ macro_rules! chain {
 mod test {
     use super::*;
     use crate::proc::dummies::*;
+    use alloc::vec;
 
     #[test]
     fn empty_chain_does_not_panic() {

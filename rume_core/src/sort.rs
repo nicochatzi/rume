@@ -1,4 +1,4 @@
-use alloc::vec::Vec;
+use alloc::{vec, vec::Vec};
 
 pub trait Sortable {
     fn next_nodes(&self, index: usize) -> Vec<usize>;
