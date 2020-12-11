@@ -566,8 +566,8 @@ impl ToString for GraphDecl {
         for decl in &self.connections.decls {
             build_graph_fn.push_str(&format!(
                 "\t\t.connection(
-                    \trume::OutputPort {{ proc: {}.clone(), port: alloc::boxed::Box::new({}.clone().borrow(){}.clone()) }},
-                    \trume::InputPort {{ proc: {}.clone(), port: alloc::boxed::Box::new({}.clone().borrow(){}.clone()) }}
+                    \trume::OutputPort {{ proc: {}.clone(), port: Box::new({}.clone().borrow(){}.clone()) }},
+                    \trume::InputPort {{ proc: {}.clone(), port: Box::new({}.clone().borrow(){}.clone()) }}
                 )\n",
                 decl.tx_processor,
                 decl.tx_processor,
