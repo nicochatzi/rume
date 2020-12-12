@@ -1,5 +1,5 @@
 use crate::*;
-use core::ops::Range;
+use core::{ops::Range, option::Option};
 pub use heapless;
 pub use heapless::{
     consts::*,

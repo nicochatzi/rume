@@ -8,8 +8,12 @@ description = ""
 readme = "README.md"
 homepage = "https://github.com/nicochatzi/rume"
 repository = "https://github.com/nicochatzi/rume"
-keywords = ["dsp", "audio", "graph"]
+keywords = ["dsp", "audio", "graph", "no_std"]
 categories = ["algorithms", "data-structures", "multimedia"]
+
+[features]
+default = ["std"]
+std = []
 
 [dependencies]
 rume_core = { path = "../rume_core" }

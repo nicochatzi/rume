@@ -1,6 +1,10 @@
 //!
 //!
 //!
+#![no_std]
+
+extern crate alloc;
+
 mod sort;
 
 #[macro_use]

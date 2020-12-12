@@ -1,4 +1,5 @@
 use crate::{io::*, proc::*, sort::*};
+use alloc::vec::Vec;
 
 pub trait Renderable {
     fn render(&mut self, num_samples: usize);
@@ -105,9 +106,9 @@ macro_rules! connect {
 #[macro_export]
 macro_rules! chain {
     ( $( ($out_proc:expr $(, $out_port_num:tt)*) => ($in_proc:expr $(, $in_port_num:tt)*)),* ) => {{
-        let mut builder = SignalChainBuilder::default();
+        let mut builder = $crate::SignalChainBuilder::default();
         $(
-            connect!(builder, ($out_proc $(, $out_port_num)*) => ($in_proc $(, $in_port_num)*));
+            $crate::connect!(builder, ($out_proc $(, $out_port_num)*) => ($in_proc $(, $in_port_num)*));
         )*
         builder.build()
     }};
@@ -117,6 +118,7 @@ macro_rules! chain {
 mod test {
     use super::*;
     use crate::proc::dummies::*;
+    use alloc::vec;
 
     #[test]
     fn empty_chain_does_not_panic() {

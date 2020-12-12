@@ -1,3 +1,5 @@
+use alloc::{vec, vec::Vec};
+
 pub trait Sortable {
     fn next_nodes(&self, index: usize) -> Vec<usize>;
     fn num_nodes(&self) -> usize;
@@ -54,8 +56,8 @@ impl<'a> TopologicalSort<'a> {
 #[cfg(test)]
 mod test {
     use super::*;
+    use alloc::rc::{Rc, Weak};
     use core::cell::RefCell;
-    use std::rc::{Rc, Weak};
 
     #[derive(Default, Debug, Clone)]
     struct Node {
