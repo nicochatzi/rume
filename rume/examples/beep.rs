@@ -11,7 +11,7 @@ pub mod synth {
             out,
         },
         processors: {
-            sine: rume::Sine::default(),
+            sine: rume::Sine::new(),
         },
         connections: {
             freq.output  ->  sine.input.0,
