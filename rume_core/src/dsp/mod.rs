@@ -3,3 +3,11 @@
 
 pub mod lut;
 pub use lut::*;
+
+pub mod osc;
+pub use osc::*;
+
+pub mod phase;
+pub use phase::*;
+
+pub mod waves;

@@ -55,6 +55,6 @@ impl Processor for Sine {
 
     fn process(&mut self) {
         self.lut.phasor.set_increment(self.frequency * table::TIME);
-        self.sample = self.lut.step() * self.amplitude;
+        self.sample = self.lut.advance() * self.amplitude;
     }
 }
