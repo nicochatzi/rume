@@ -37,7 +37,7 @@ pub struct Sine {
     sample: f32,
 
     lut: OwnedLut,
-    sample_period: f32,
+    sample_time: f32,
 }
 
 impl Sine {
@@ -50,11 +50,42 @@ impl Sine {
 
 impl Processor for Sine {
     fn prepare(&mut self, config: AudioConfig) {
-        self.sample_period = 1.0 / config.sample_rate as f32;
+        self.sample_time = 1.0 / config.sample_rate as f32;
     }
 
     fn process(&mut self) {
         self.lut.phasor.set_increment(self.frequency * table::TIME);
         self.sample = self.lut.advance() * self.amplitude;
+    }
+}
+
+#[processor]
+pub struct Saw {
+    #[input]
+    frequency: f32,
+
+    #[input]
+    amplitude: f32,
+
+    #[output]
+    sample: f32,
+
+    phasor: Phasor,
+    sample_time: f32,
+}
+
+impl Processor for Saw {
+    fn prepare(&mut self, config: AudioConfig) {
+        self.sample_time = 1.0 / config.sample_rate as f32;
+        self.phasor.reset();
+    }
+
+    fn process(&mut self) {
+        let cps = self.frequency * self.sample_time;
+        self.phasor.set_increment(cps);
+        let phase = self.phasor.advance();
+        self.sample = waves::saw::rise(phase);
+        self.sample -= bandlimited::step((phase + 0.5) % 1., cps);
+        self.sample *= self.amplitude;
     }
 }
