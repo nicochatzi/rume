@@ -1,9 +1,10 @@
 //!
 //!
+use alloc::vec::Vec;
 
 #[inline(always)]
 pub fn lerp(x0: f32, x1: f32, w: f32) -> f32 {
-    (1 as f32 - (w)) * x0 + (w * x1)
+    (1_f32 - (w)) * x0 + (w * x1)
 }
 
 /// table must be power of 2
@@ -16,28 +17,20 @@ pub fn filut(table: &[f32], index: f32) -> f32 {
     lerp(table[index0], table[index1], weight)
 }
 
-#[derive(Debug, Clone)]
+#[derive(Default, Debug, Clone)]
 pub struct Phasor {
     accumulator: f32,
     increment: f32,
     max: f32,
 }
 
-impl Default for Phasor {
-    fn default() -> Phasor {
-        Phasor {
-            accumulator: 0.0,
-            increment: 0.1,
-            max: 1.0,
-        }
-    }
-}
-
 impl Phasor {
     pub fn with_max(max: f32) -> Self {
-        let mut phasor = Phasor::default();
-        phasor.max = max;
-        phasor
+        Self {
+            accumulator: 0.0,
+            increment: 1.0,
+            max,
+        }
     }
 
     pub fn set_increment(&mut self, increment: f32) {
@@ -78,26 +71,20 @@ impl<'a> Lut<'a> {
 
 /// Lookup Table that constructs
 /// and owns the table it uses.
-#[derive(Debug, Clone)]
-pub struct OwnedLut<const N: usize> {
+#[derive(Default, Debug, Clone)]
+pub struct OwnedLut {
     pub phasor: Phasor,
-    table: [f32; N],
+    table: Vec<f32>,
 }
 
-impl<const N: usize> Default for OwnedLut<N> {
-    fn default() -> Self {
+impl OwnedLut {
+    pub fn new<F: Fn(f32) -> f32>(closure: F, size: usize) -> Self {
+        let mut table = Vec::with_capacity(size);
+        (0..size).for_each(|i| table.push(closure(i as f32 / size as f32)));
         Self {
-            phasor: Phasor::with_max(N as f32),
-            table: [0.0; N],
+            phasor: Phasor::with_max(size as f32),
+            table,
         }
-    }
-}
-
-impl<const N: usize> OwnedLut<N> {
-    pub fn new<F: Fn(f32) -> f32>(closure: F) -> Self {
-        let mut lut = OwnedLut::default();
-        (0..N).for_each(|i| lut.table[i] = closure(i as f32 / N as f32));
-        lut
     }
 
     pub fn step(&mut self) -> f32 {

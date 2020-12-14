@@ -36,14 +36,14 @@ pub struct Sine {
     #[output]
     sample: f32,
 
-    lut: OwnedLut<{ table::SIZE }>,
+    lut: OwnedLut,
     sample_period: f32,
 }
 
 impl Sine {
     pub fn new() -> Self {
         let mut sine = Self::default();
-        sine.lut = OwnedLut::new(|x: f32| (x * 2. * core::f32::consts::PI).sin());
+        sine.lut = OwnedLut::new(|x: f32| (x * 2. * core::f32::consts::PI).sin(), table::SIZE);
         sine
     }
 }

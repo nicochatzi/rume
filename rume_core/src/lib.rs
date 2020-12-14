@@ -2,13 +2,8 @@
 //!
 //!
 
-#![feature(min_const_generics)]
-
 #![deny(warnings)]
-// #![deny(clippy::all, clippy::pedantic)]
-
 #![no_std]
-
 
 extern crate alloc;
 
