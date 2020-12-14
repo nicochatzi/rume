@@ -1,6 +1,6 @@
-use rume_core::*;
+use crate::*;
 
-#[rume_macros::processor]
+#[processor]
 pub struct Value {
     #[output]
     value: f32,
@@ -19,7 +19,13 @@ impl Value {
     }
 }
 
-#[rume_macros::processor]
+mod table {
+    pub const SIZE: usize = 256;
+    pub const FREQ: f32 = 48_000. / SIZE as f32;
+    pub const TIME: f32 = 1. / FREQ;
+}
+
+#[processor]
 pub struct Sine {
     #[input]
     frequency: f32,
@@ -30,8 +36,16 @@ pub struct Sine {
     #[output]
     sample: f32,
 
-    phase: f32,
+    lut: OwnedLut,
     sample_period: f32,
+}
+
+impl Sine {
+    pub fn new() -> Self {
+        let mut sine = Self::default();
+        sine.lut = OwnedLut::new(|x: f32| (x * 2. * core::f32::consts::PI).sin(), table::SIZE);
+        sine
+    }
 }
 
 impl Processor for Sine {
@@ -40,9 +54,7 @@ impl Processor for Sine {
     }
 
     fn process(&mut self) {
-        const TWO_PI: f32 = 2.0_f32 * core::f32::consts::PI;
-        let increment = TWO_PI * self.frequency * self.sample_period;
-        self.phase = (self.phase + increment) % TWO_PI;
-        self.sample = self.phase.sin() * self.amplitude;
+        self.lut.phasor.set_increment(self.frequency * table::TIME);
+        self.sample = self.lut.step() * self.amplitude;
     }
 }
