@@ -11,3 +11,5 @@ pub mod phase;
 pub use phase::*;
 
 pub mod waves;
+
+pub mod convert;
