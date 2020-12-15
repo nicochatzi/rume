@@ -1,21 +1,12 @@
-#[derive(Debug, Clone)]
+#[derive(Default, Debug, Clone)]
 pub struct Phasor {
-    pub increment: f32,
+    increment: f32,
     accumulator: f32,
     max: f32,
 }
 
-impl Default for Phasor {
-    fn default() -> Self {
-        Self {
-            accumulator: 0.0,
-            increment: 0.0,
-            max: 1.0,
-        }
-    }
-}
-
 impl Phasor {
+    #[inline(always)]
     pub fn new(increment: f32, max: f32) -> Self {
         Self {
             accumulator: 0.0,
@@ -24,23 +15,33 @@ impl Phasor {
         }
     }
 
+    #[inline(always)]
     pub fn with_max(max: f32) -> Self {
         Self::new(1.0, max)
     }
 
+    #[inline(always)]
     pub fn reset(&mut self) {
         self.accumulator = 0.0;
     }
 
+    #[inline(always)]
+    pub fn inc(&mut self, increment: f32) {
+        self.increment = increment;
+    }
+
+    #[inline(always)]
     pub fn shift(&mut self, shift: f32) {
         self.accumulator += shift;
         self.accumulator %= self.max;
     }
 
+    #[inline(always)]
     pub fn get(&self) -> f32 {
         self.accumulator
     }
 
+    #[inline(always)]
     pub fn advance(&mut self) -> f32 {
         self.shift(self.increment);
         self.get()

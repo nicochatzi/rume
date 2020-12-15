@@ -54,7 +54,7 @@ impl Processor for Sine {
     }
 
     fn process(&mut self) {
-        self.lut.phasor.increment = self.frequency * table::TIME;
+        self.lut.phasor.inc(self.frequency * table::TIME);
         self.sample = self.lut.advance() * self.amplitude;
     }
 }
@@ -82,7 +82,7 @@ impl Processor for Saw {
 
     fn process(&mut self) {
         let cps = self.frequency * self.sample_time;
-        self.phasor.increment = cps;
+        self.phasor.inc(cps);
         let phase = self.phasor.advance();
         self.sample = waves::saw::rise(phase);
         self.sample -= bandlimited::step((phase + 0.5) % 1., cps);

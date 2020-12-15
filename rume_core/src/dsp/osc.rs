@@ -1,5 +1,11 @@
+/// A set of polynomial band limited functions.
+/// These allow band limiting of a naive waveform
+/// in real-time by smoothing sharp edges.
+///
+/// Based of these papers:
+///
 pub mod bandlimited {
-    /// Second Order Band Limited Step function.
+    /// Second-Order Band Limited Step function.
     #[inline(always)]
     pub fn step(t: f32, dt: f32) -> f32 {
         if t < dt {
@@ -11,7 +17,7 @@ pub mod bandlimited {
         }
     }
 
-    /// Second Order Band Limited Ramp function.
+    /// Second-Order Band Limited Ramp function.
     #[inline(always)]
     pub fn ramp(t: f32, dt: f32) -> f32 {
         if t < dt {

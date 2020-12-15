@@ -1,7 +1,7 @@
 //!
 //!
+use crate::lib::Vec;
 use crate::Phasor;
-use alloc::vec::Vec;
 
 pub mod interpolate {
     #[inline(always)]

@@ -10,6 +10,5 @@ pub use osc::*;
 pub mod phase;
 pub use phase::*;
 
-pub mod waves;
-
 pub mod convert;
+pub mod waves;

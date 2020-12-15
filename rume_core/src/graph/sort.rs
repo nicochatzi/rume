@@ -1,4 +1,4 @@
-use alloc::{vec, vec::Vec};
+use crate::lib::*;
 
 pub trait Sortable {
     fn next_nodes(&self, index: usize) -> Vec<usize>;
@@ -56,7 +56,6 @@ impl<'a> TopologicalSort<'a> {
 #[cfg(test)]
 mod test {
     use super::*;
-    use alloc::rc::{Rc, Weak};
     use core::cell::RefCell;
 
     #[derive(Default, Debug, Clone)]
