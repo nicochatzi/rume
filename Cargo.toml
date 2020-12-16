@@ -3,4 +3,6 @@ members = [
     "rume",
     "rume_core",
     "rume_macros",
+
+    "examples/lab"
 ]

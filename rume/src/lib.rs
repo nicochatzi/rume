@@ -14,3 +14,6 @@ extern crate alloc;
 
 #[cfg(not(feature = "std"))]
 pub use alloc::boxed::Box;
+
+#[cfg(feature = "lab")]
+pub mod lab;
