@@ -1,5 +1,4 @@
-use crate::proc::*;
-use alloc::{boxed::Box, rc::Rc};
+use crate::{lib::*, proc::*};
 
 pub type DynInputPort = InputPort<dyn Processor, dyn Input<dyn Processor>>;
 pub type DynOutputPort = OutputPort<dyn Processor, dyn Output<dyn Processor>>;
@@ -212,7 +211,7 @@ macro_rules! make_output_port {
     ($proc:expr $(, $port_num:tt)*) => {
         $crate::OutputPort {
             proc: $proc.clone(),
-            port: alloc::boxed::Box::new($proc.clone().borrow().output $(. $port_num)* .clone()),
+            port: Box::new($proc.clone().borrow().output $(. $port_num)* .clone()),
         }
     };
 }
@@ -227,7 +226,7 @@ macro_rules! make_input_port {
     ($proc:expr $(, $port_num:tt)*) => {
         $crate::InputPort {
             proc: $proc.clone(),
-            port: alloc::boxed::Box::new($proc.clone().borrow().input $(. $port_num)* .clone()),
+            port: Box::new($proc.clone().borrow().input $(. $port_num)* .clone()),
         }
     };
 }

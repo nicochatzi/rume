@@ -1,50 +1,20 @@
 //!
 //!
-use alloc::vec::Vec;
+use crate::lib::Vec;
+use crate::Phasor;
 
-#[inline(always)]
-pub fn lerp(x0: f32, x1: f32, w: f32) -> f32 {
-    (1_f32 - (w)) * x0 + (w * x1)
-}
-
-/// table must be power of 2
-#[inline(always)]
-pub fn filut(table: &[f32], index: f32) -> f32 {
-    let length: usize = table.len() - 1;
-    let index0: usize = index as usize;
-    let index1: usize = (index0 + 1) % length;
-    let weight: f32 = index - index0 as f32;
-    lerp(table[index0], table[index1], weight)
-}
-
-#[derive(Default, Debug, Clone)]
-pub struct Phasor {
-    accumulator: f32,
-    increment: f32,
-    max: f32,
-}
-
-impl Phasor {
-    pub fn with_max(max: f32) -> Self {
-        Self {
-            accumulator: 0.0,
-            increment: 1.0,
-            max,
-        }
+pub mod interpolate {
+    #[inline(always)]
+    pub fn linear(x0: f32, x1: f32, w: f32) -> f32 {
+        (1_f32 - (w)) * x0 + (w * x1)
     }
 
-    pub fn set_increment(&mut self, increment: f32) {
-        self.increment = increment;
-    }
-
-    pub fn reset(&mut self) {
-        self.accumulator = 0.0;
-    }
-
-    pub fn step(&mut self) -> f32 {
-        self.accumulator += self.increment;
-        self.accumulator %= self.max;
-        self.accumulator
+    #[inline(always)]
+    pub fn lookup(table: &[f32], index: f32) -> f32 {
+        let index0: usize = index as usize;
+        let index1: usize = (index0 + 1) % table.len();
+        let weight: f32 = index - index0 as f32;
+        linear(table[index0], table[index1], weight)
     }
 }
 
@@ -65,7 +35,7 @@ impl<'a> Lut<'a> {
     }
 
     pub fn step(&mut self) -> f32 {
-        filut(self.table, self.phasor.step())
+        interpolate::lookup(self.table, self.phasor.advance())
     }
 }
 
@@ -87,7 +57,7 @@ impl OwnedLut {
         }
     }
 
-    pub fn step(&mut self) -> f32 {
-        filut(&self.table, self.phasor.step())
+    pub fn advance(&mut self) -> f32 {
+        interpolate::lookup(&self.table, self.phasor.advance())
     }
 }

@@ -40,7 +40,7 @@ pub mod synth {
         processors: {
             lvl: rume::Value::new(0.6),
             amt: rume::Value::new(0.1),
-            sine: rume::Sine::new(),
+            sine: rume::Saw::default(),
             lpf: Lpf::default(),
         },
         connections: {
