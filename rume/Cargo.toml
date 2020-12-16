@@ -13,7 +13,7 @@ categories = ["algorithms", "data-structures", "multimedia"]
 
 [features]
 default = ["std"]
-std = []
+std = ["rume_core/std"]
 
 [dependencies]
 rume_core = { path = "../rume_core" }

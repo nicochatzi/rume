@@ -5,6 +5,9 @@
 /// Based of these papers:
 ///
 pub mod bandlimited {
+    #[cfg(not(feature = "std"))]
+    use crate::F32Extension;
+
     /// Second-Order Band Limited Step function.
     #[inline(always)]
     pub fn step(t: f32, dt: f32) -> f32 {

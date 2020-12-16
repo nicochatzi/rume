@@ -13,10 +13,7 @@ categories = [""]
 
 [dependencies]
 heapless = "0.5.6"
-
-[dependencies.libm]
-version = "0.2.1"
-default-features = false
+libm = { version = "0.2.1", default-features = false }
 
 [features]
 default = []

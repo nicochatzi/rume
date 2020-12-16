@@ -44,6 +44,9 @@ pub mod tick {
 
 ///
 pub mod pitch {
+    #[cfg(not(feature = "std"))]
+    use crate::F32Extension;
+
     /// From a frequency in hertz to a number of cycles per sample.
     /// Takes a frequency and a sampling time.
     #[inline(always)]
@@ -89,6 +92,9 @@ pub mod rad {
 
 ///
 pub mod db {
+    #[cfg(not(feature = "std"))]
+    use crate::F32Extension;
+
     const LOG_TEN: f32 = 2.302585092994046;
 
     ///
@@ -169,8 +175,8 @@ mod test {
 
     #[test]
     fn pitch_to_midi() {
-        println!("{}", pitch::to_midi(440.));
-        println!("{}", pitch::from_midi(70.));
+        // println!("{}", pitch::to_midi(440.));
+        // println!("{}", pitch::from_midi(70.));
     }
 
     #[test]
