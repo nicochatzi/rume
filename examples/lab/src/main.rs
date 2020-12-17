@@ -54,7 +54,7 @@ pub mod sine {
 
     rume::graph! {
         inputs: {
-            freq: { init: 220.0 },
+            freq: { init: 220.0, range: 220.0..880.0 },
             amp: { init: 1.0 },
             reset: { kind: trigger },
         },
@@ -70,16 +70,32 @@ pub mod sine {
 }
 
 fn main() {
-    let (graph, inputs, outputs) = sine::build();
+    let (graph, ins, outputs) = sine::build();
+    let (mut freq, mut amp, reset) = (ins.freq, ins.amp, ins.reset);
+
     let mut analyzer = GeneratorAnalyzer {
         model: GeneratorModel {
             graph,
             audio_out: outputs.out,
-            reset: Some(inputs.reset),
+            reset: Some(reset),
         },
         spec: AnalyzerSpec::default(),
     };
 
     analyzer.plot("sine.png");
     analyzer.wav("sine.wav");
+
+    let mut f = 220_f32;
+    let mut a = 1_f32;
+    analyzer.spec.num_buffers = 10;
+    analyzer.wav_with_modulation(
+        "sine_modulate.wav",
+        move || {
+            freq.enqueue(f).unwrap();
+            amp.enqueue(a).unwrap();
+            f *= 10.;
+            a *= 0.5;
+        },
+        ModulationRate::Audio,
+    );
 }

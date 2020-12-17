@@ -14,7 +14,7 @@ pub struct AnalyzerSpec {
     pub sample_rate: f32,
     pub num_samples: usize,
     pub output_path: PathBuf,
-    pub num_buffers: Option<usize>,
+    pub num_buffers: usize,
 }
 
 impl Default for AnalyzerSpec {
@@ -22,7 +22,7 @@ impl Default for AnalyzerSpec {
         Self {
             sample_rate: 48_000.,
             num_samples: 512,
-            num_buffers: None,
+            num_buffers: 1,
             output_path: PathBuf::new(),
         }
     }
@@ -87,12 +87,44 @@ pub struct GeneratorAnalyzer {
     pub spec: AnalyzerSpec,
 }
 
+pub enum ModulationRate {
+    Audio,
+    Control,
+}
+
 impl GeneratorAnalyzer {
     /// Render an amount of audio specified by the
     /// `AnalyzerSpec` to a wav file.
     pub fn wav(&mut self, file_name: &str) {
+        let mut w = self.spec.wav_writer(file_name);
         self.prepare();
-        self.write_wav(file_name);
+        self.write_wav(&mut w);
+    }
+
+    /// Render an amount of audio specified by the
+    /// `AnalyzerSpec` to a wav file with input
+    /// modulation.
+    pub fn wav_with_modulation<F: FnMut()>(
+        &mut self,
+        file_name: &str,
+        mut modulate: F,
+        rate: ModulationRate,
+    ) {
+        let mut w = self.spec.wav_writer(file_name);
+
+        self.prepare();
+
+        for _ in 0..self.spec.num_buffers {
+            match rate {
+                ModulationRate::Control => {
+                    modulate();
+                    self.write_wav(&mut w);
+                }
+                ModulationRate::Audio => {
+                    self.write_wav_with_modulation(&mut w, &mut modulate);
+                }
+            }
+        }
     }
 
     ///
@@ -113,10 +145,21 @@ impl GeneratorAnalyzer {
         }
     }
 
-    fn write_wav(&mut self, file_name: &str) {
-        let mut w = self.spec.wav_writer(file_name);
-        (0..self.spec.num_samples)
-            .for_each(|_| w.write_sample(self.model.generate_sample()).unwrap());
+    fn write_wav(&mut self, w: &mut WavWriter<io::BufWriter<fs::File>>) {
+        for _ in 0..self.spec.num_samples {
+            w.write_sample(self.model.generate_sample()).unwrap()
+        }
+    }
+
+    fn write_wav_with_modulation<F: FnMut()>(
+        &mut self,
+        w: &mut WavWriter<io::BufWriter<fs::File>>,
+        modulate: &mut F,
+    ) {
+        for _ in 0..self.spec.num_samples {
+            modulate();
+            w.write_sample(self.model.generate_sample()).unwrap()
+        }
     }
 
     fn write_plot(&mut self, file_name: &str) {
