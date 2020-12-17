@@ -368,13 +368,14 @@ impl GraphInputs {
         let mut endpoints_init = String::new();
 
         for decl in &self.decls {
+            let endpoint_name = format!("{}_ENDPOINT", decl.name.to_uppercase());
             endpoints_init.push_str(&format!(
                 "\t{}\n\t{}\n\n",
                 format!(
-                    "let ({}_producer, {}_consumer) = rume::make_input_endpoint();",
-                    decl.name, decl.name
+                    "let ({}_producer, {}_consumer) = rume::split_input_endpoint!({});",
+                    decl.name, decl.name, endpoint_name
                 ),
-                decl.to_endpoint_init()
+                decl.to_endpoint_init(),
             ));
         }
 
@@ -449,11 +450,12 @@ impl GraphOutputs {
         let mut endpoints_init = String::new();
 
         for name in &self.names {
+            let endpoint_name = format!("{}_ENDPOINT", name.to_uppercase());
             endpoints_init.push_str(&format!(
                 "\t{}\n\t{}\n\n",
                 format!(
-                    "let ({}_producer, {}_consumer) = rume::make_output_endpoint();",
-                    name, name
+                    "let ({}_producer, {}_consumer) = rume::split_output_endpoint!({});",
+                    name, name, endpoint_name
                 ),
                 format!(
                     "let {} = rume::make_processor(rume::OutputEndpoint::new({}_producer));",

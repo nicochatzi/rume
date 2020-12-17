@@ -122,6 +122,12 @@ mod test {
     use crate::proc::dummies::*;
 
     #[test]
+    fn signal_chain_is_sendable() {
+        fn assert_send<T: Send>() {}
+        assert_send::<SignalChain>();
+    }
+
+    #[test]
     fn empty_chain_does_not_panic() {
         let mut chain = SignalChainBuilder::default().build();
         chain.prepare(48_000.into());
