@@ -16,9 +16,14 @@ pub mod sine {
 fn main() {
     let (graph, _, outputs) = sine::build();
     let mut analyzer = GeneratorAnalyzer {
-        model: GeneratorModel::new(graph, outputs.out, None),
+        model: GeneratorModel {
+            graph,
+            audio_out: outputs.out,
+            reset: None,
+        },
         spec: AnalyzerSpec::default(),
     };
 
     analyzer.wav("sine.wav");
+    analyzer.plot("sine.png");
 }
