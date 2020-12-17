@@ -161,7 +161,7 @@ pub fn plot(buffer: &[f32], file_name: &str) -> Result<(), Box<dyn std::error::E
     chart
         .draw_series(LineSeries::new(
             buffer
-                .into_iter()
+                .iter()
                 .enumerate()
                 .map(|(i, x)| (i as f64, *x as f64)),
             &palette::DEEP_B,
