@@ -1,6 +1,4 @@
-use std::path::PathBuf;
-
-use rume::lab::GeneratorAnalyzer;
+use rume::lab::{AnalyzerSpec, GeneratorAnalyzer, GeneratorModel};
 
 pub mod sine {
     rume::graph! {
@@ -17,11 +15,10 @@ pub mod sine {
 
 fn main() {
     let (graph, _, outputs) = sine::build();
-    GeneratorAnalyzer {
-        graph,
-        audio_out: outputs.out,
-        num_samples: 512,
-        output_path: PathBuf::new(),
-    }
-    .wav("sine.wav");
+    let mut analyzer = GeneratorAnalyzer {
+        model: GeneratorModel::new(graph, outputs.out, None),
+        spec: AnalyzerSpec::default(),
+    };
+
+    analyzer.wav("sine.wav");
 }

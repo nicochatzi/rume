@@ -1,13 +1,17 @@
 # Rume &emsp;
 
-[![Build Status]][actions] [![Latest Version]][crates.io] [![codecov]][coverage]
+[![crates.io badge]][crates.io] [![docs.rs badge]][docs.rs] [![build badge]][build] [![codecov badge]][codecov] [![license badge]][license]
 
-[Build Status]: https://img.shields.io/github/workflow/status/nicochatzi/rume/CI/main
-[actions]: https://github.com/nicochatzi/rume/actions?query=branch%main
-[Latest Version]: https://img.shields.io/crates/v/rume.svg
+[build badge]: https://img.shields.io/github/workflow/status/nicochatzi/rume/CI/main
+[build]: https://github.com/nicochatzi/rume/actions?query=branch%main
+[docs.rs badge]: https://docs.rs/rume/badge.svg
+[docs.rs]: https://docs.rs/rume
+[crates.io badge]: https://img.shields.io/crates/v/rume.svg
 [crates.io]: https://crates.io/crates/rume
-[codecov]:https://codecov.io/gh/nicochatzi/rume/branch/main/graph/badge.svg
-[coverage]:https://codecov.io/gh/nicochatzi/rume
+[codecov badge]:https://codecov.io/gh/nicochatzi/rume/branch/main/graph/badge.svg
+[codecov]:https://codecov.io/gh/nicochatzi/rume
+[license badge]: https://img.shields.io/badge/License-MIT-blue.svg
+[license]: https://opensource.org/licenses/MIT
 
 RUst Modular Environment for writing audio DSP graphs.
 
