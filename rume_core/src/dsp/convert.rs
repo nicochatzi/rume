@@ -73,9 +73,8 @@ pub mod pitch {
 
     ///
     #[inline(always)]
-    pub fn from_midi(midi: f32) -> f32 {
-        assert!(midi >= 0.);
-        440. * 2_f32.powf((midi - 69.) / 12.)
+    pub fn from_midi(midi: u8) -> f32 {
+        440. * 2_f32.powf((midi as f32 - 69.) / 12.)
     }
 }
 
@@ -189,9 +188,9 @@ mod test {
 
     #[test]
     fn pitch_from_midi() {
-        assert_eq!(pitch::from_midi(120.), 8372.018);
-        assert_eq!(pitch::from_midi(69.), 440.);
-        assert_eq!(pitch::from_midi(30.), 46.249302);
+        assert_eq!(pitch::from_midi(120), 8372.018);
+        assert_eq!(pitch::from_midi(69), 440.);
+        assert_eq!(pitch::from_midi(30), 46.249302);
     }
 
     #[test]

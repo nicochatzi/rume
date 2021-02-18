@@ -49,6 +49,7 @@ pub trait F32Extension {
     fn log10(self) -> f32;
     fn sin(self) -> f32;
     fn exp(self) -> f32;
+    fn tanh(self) -> f32;
 }
 
 #[cfg(not(feature = "std"))]
@@ -76,5 +77,10 @@ impl F32Extension for f32 {
     #[inline(always)]
     fn exp(self) -> f32 {
         libm::expf(self)
+    }
+
+    #[inline(always)]
+    fn tanh(self) -> f32 {
+        libm::tanhf(self)
     }
 }
