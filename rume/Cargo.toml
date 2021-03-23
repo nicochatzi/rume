@@ -22,4 +22,4 @@ rume_macros = { path = "../rume_macros" }
 [dev-dependencies]
 hound = "3.4.0"
 cpal = "0.13.1"
-anyhow = "1.0.34"
+anyhow = "1.0.39"
