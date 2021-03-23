@@ -4,22 +4,32 @@ on: [push]
 
 jobs:
   build_and_test:
-    name: Run crate tests
-    runs-on: macos-latest
+    name: build and test
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os:
+          - ubuntu-latest
+          - macOS-latest
+          - windows-latest
     steps:
       - uses: actions/checkout@v2
-
       - uses: actions-rs/toolchain@v1
         with:
           profile: minimal
           toolchain: stable
-
+      - uses: actions/cache@v2
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: cargo-${{ runner.os }}-${{ hashFiles('Cargo.lock') }}
       - name: Run tests
         uses: actions-rs/cargo@v1
         with:
           command: test
           args: --no-fail-fast
-
       - name: Run linter
         uses: actions-rs/cargo@v1
         with:
