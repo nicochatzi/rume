@@ -24,17 +24,19 @@ impl Default for AudioConfig {
 
 impl Into<AudioConfig> for u32 {
     fn into(self) -> AudioConfig {
-        let mut config = AudioConfig::default();
-        config.sample_rate = self as usize;
-        config
+        AudioConfig {
+            sample_rate: self as usize,
+            ..AudioConfig::default()
+        }
     }
 }
 
 impl Into<AudioConfig> for f32 {
     fn into(self) -> AudioConfig {
-        let mut config = AudioConfig::default();
-        config.sample_rate = self as usize;
-        config
+        AudioConfig {
+            sample_rate: self as usize,
+            ..AudioConfig::default()
+        }
     }
 }
 

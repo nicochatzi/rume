@@ -13,9 +13,10 @@ impl Processor for Value {
 
 impl Value {
     pub fn new(value: f32) -> Self {
-        let mut v = Self::default();
-        v.value = value;
-        v
+        Self {
+            value,
+            ..Self::default()
+        }
     }
 }
 
@@ -42,9 +43,10 @@ pub struct Sine {
 
 impl Sine {
     pub fn new() -> Self {
-        let mut sine = Self::default();
-        sine.lut = OwnedLut::new(|x: f32| (x * 2. * core::f32::consts::PI).sin(), table::SIZE);
-        sine
+        Self {
+            lut: OwnedLut::new(|x: f32| (x * 2. * core::f32::consts::PI).sin(), table::SIZE),
+            ..Self::default()
+        }
     }
 }
 
