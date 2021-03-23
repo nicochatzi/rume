@@ -1,11 +1,13 @@
-# Rume &emsp; [![Build Status]][actions] [![Latest Version]][crates.io] [![codecov]][coverage]
+# Rume &emsp; [![ci-badge]][ci-link] [![crates-badge]][crates-link] [![cov-badge]][cov-link] [![deps-badge]][deps-link]
 
-[Build Status]: https://img.shields.io/github/workflow/status/nicochatzi/rume/CI/main
-[actions]: https://github.com/nicochatzi/rume/actions?query=branch%main
-[Latest Version]: https://img.shields.io/crates/v/rume.svg
-[crates.io]: https://crates.io/crates/rume
-[codecov]:https://codecov.io/gh/nicochatzi/rume/branch/main/graph/badge.svg
-[coverage]:https://codecov.io/gh/nicochatzi/rume
+[ci-badge]: https://img.shields.io/github/workflow/status/nicochatzi/rume/CI/main
+[ci-link]: https://github.com/nicochatzi/rume/actions?query=branch%main
+[crates-badge]: https://img.shields.io/crates/v/rume.svg
+[crates-link]: https://crates.io/crates/rume
+[cov-badge]:https://codecov.io/gh/nicochatzi/rume/branch/main/graph/badge.svg
+[cov-link]:https://codecov.io/gh/nicochatzi/rume
+[deps-badge]: https://deps.rs/repo/github/nicochatzi/rume/status.svg
+[deps-link]: https://deps.rs/repo/github/nicochatzi/rume
 
 RUst Modular Environment for writing audio DSP graphs.
 
