@@ -1,0 +1,23 @@
+version: 2
+updates:
+- package-ecosystem: cargo
+  directory: "/"
+  schedule:
+    interval: daily
+  open-pull-requests-limit: 10
+  ignore:
+  - dependency-name: anyhow
+    versions:
+    - 1.0.39
+  - dependency-name: quote
+    versions:
+    - 1.0.9
+  - dependency-name: syn
+    versions:
+    - 1.0.64
+  - dependency-name: heapless
+    versions:
+    - 0.6.1
+  - dependency-name: cpal
+    versions:
+    - 0.13.2
