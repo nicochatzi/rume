@@ -20,7 +20,7 @@ pub mod interpolate {
 
 /// Lookup Table that does not
 /// own the data is uses.
-#[derive(Default, Debug, Clone)]
+#[derive(Default, Debug, Copy, Clone)]
 pub struct Lut<'a> {
     pub phasor: Phasor,
     table: &'a [f32],
