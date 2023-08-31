@@ -121,8 +121,8 @@ impl InputEndpoint {
 ///
 ///     const VALUE_TO_PASS: f32 = 3.14;
 ///
-///     let (in_producer, in_consumer) = endpoint!(InputStream);
-///     let (out_producer, out_consumer) = endpoint!(OutputStream);
+///     let (mut in_producer, mut in_consumer) = endpoint!(INPUT, InputStream);
+///     let (mut out_producer, mut out_consumer) = endpoint!(OUTPUT, OutputStream);
 ///
 ///     in_producer.enqueue(VALUE_TO_PASS).unwrap();
 ///     let value = in_consumer.dequeue().unwrap();
@@ -131,11 +131,12 @@ impl InputEndpoint {
 ///     assert_eq!(out_consumer.dequeue().unwrap(), VALUE_TO_PASS);
 ///
 /// ```
+#[macro_export]
 macro_rules! endpoint {
-    ($endpoint_type: ty) => {{
+    ($endpoint_name: ident, $endpoint_type: ty) => {{
         use $crate::heapless::{i, spsc};
-        static mut ENDPOINT: $endpoint_type = spsc::Queue(i::Queue::new());
-        unsafe { ENDPOINT.split() }
+        static mut $endpoint_name: $endpoint_type = spsc::Queue(i::Queue::new());
+        unsafe { $endpoint_name.split() }
     }};
 }
 
@@ -143,12 +144,12 @@ macro_rules! endpoint {
 ///
 /// ```
 ///     use rume_core::{
-///         Output, InputEndpoint, InputEndpointOutput, make_processor, make_input_endpoint, Processor
+///         Output, InputEndpoint, InputEndpointOutput, make_processor, split_input_endpoint, Processor
 ///     };
 ///
 ///     const VALUE_TO_PASS: f32 = 3.14;
 ///
-///     let (mut producer, consumer) = make_input_endpoint();
+///     let (mut producer, consumer) = split_input_endpoint!(UNIQUE_ENDPOINT_NAME);
 ///     let processor = make_processor(InputEndpoint::new(consumer));
 ///
 ///     producer.enqueue(VALUE_TO_PASS).unwrap();
@@ -156,27 +157,33 @@ macro_rules! endpoint {
 ///
 ///     assert_eq!(InputEndpointOutput.get(processor.clone()), VALUE_TO_PASS);
 /// ```
-pub fn make_input_endpoint() -> (InputStreamProducer, InputStreamConsumer) {
-    endpoint!(InputStream)
+#[macro_export]
+macro_rules! split_input_endpoint {
+    ($endpoint_name: ident) => {
+        $crate::endpoint!($endpoint_name, $crate::InputStream)
+    };
 }
 
 /// Create an output endpoint producer and consumer.
 ///
 /// ```
 ///     use rume_core::{
-///         Input, OutputEndpoint, OutputEndpointInput, make_processor, make_output_endpoint
+///         Input, OutputEndpoint, OutputEndpointInput, make_processor, split_output_endpoint
 ///     };
 ///
 ///     const VALUE_TO_PASS: f32 = 3.14;
 ///
-///     let (producer, mut consumer) = make_output_endpoint();
+///     let (producer, mut consumer) = split_output_endpoint!(UNIQUE_ENDPOINT_NAME);
 ///     let processor = make_processor(OutputEndpoint::new(producer));
 ///
 ///     OutputEndpointInput.set(processor.clone(), VALUE_TO_PASS);
 ///     assert_eq!(consumer.dequeue().unwrap(), VALUE_TO_PASS);
 /// ```
-pub fn make_output_endpoint() -> (OutputStreamProducer, OutputStreamConsumer) {
-    endpoint!(OutputStream)
+#[macro_export]
+macro_rules! split_output_endpoint {
+    ($endpoint_name: ident) => {
+        $crate::endpoint!($endpoint_name, $crate::OutputStream)
+    };
 }
 
 pub struct InputEndpointBuilder {
@@ -280,10 +287,17 @@ mod test {
     use super::*;
 
     #[test]
+    fn endpoints_are_sendable() {
+        fn assert_send<T: Send>() {}
+        assert_send::<InputEndpoint>();
+        assert_send::<OutputEndpoint>();
+    }
+
+    #[test]
     fn input_endpoint_with_init_is_initialised() {
         const INIT_VALUE: f32 = 3.14;
 
-        let (_, consumer) = make_input_endpoint();
+        let (_, consumer) = split_input_endpoint!(DUMMY_ENDPOINT);
         let endpoint = InputEndpointBuilder::new(consumer).init(INIT_VALUE).build();
         let processor = make_processor(endpoint);
 
@@ -298,7 +312,7 @@ mod test {
         const VALUE_ABOVE_RANGE: f32 = MAX_VALUE + 100.0;
         const VALUE_BELLOW_RANGE: f32 = MIN_VALUE - 10.0;
 
-        let (mut producer, consumer) = make_input_endpoint();
+        let (mut producer, consumer) = split_input_endpoint!(DUMMY_ENDPOINT);
         let processor = make_processor(
             InputEndpointBuilder::new(consumer)
                 .range(MIN_VALUE..MAX_VALUE)
@@ -327,7 +341,7 @@ mod test {
         // the opposite direction: - => down, + => up.
         assert!(INIT_VALUE.abs() < TARGET_VALUE.abs());
 
-        let (mut producer, consumer) = make_input_endpoint();
+        let (mut producer, consumer) = split_input_endpoint!(DUMMY_ENDPOINT);
         let processor = make_processor(
             InputEndpointBuilder::new(consumer)
                 .init(INIT_VALUE)
@@ -355,7 +369,7 @@ mod test {
     fn input_endpoint_as_trigger_falls_back_to_zero() {
         const TRIGGER_VALUE: f32 = 1000.0;
 
-        let (mut producer, consumer) = make_input_endpoint();
+        let (mut producer, consumer) = split_input_endpoint!(TRIGGER_ENDPOINT);
         let processor = make_processor(
             InputEndpointBuilder::new(consumer)
                 .kind(InputEndpointKind::Trigger)

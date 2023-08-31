@@ -1,48 +1,67 @@
-# Rume &emsp; [![Build Status]][actions] [![Latest Version]][crates.io] [![codecov]][coverage]
+# Rume &emsp;
 
-[Build Status]: https://img.shields.io/github/workflow/status/nicochatzi/rume/CI/main
-[actions]: https://github.com/nicochatzi/rume/actions?query=branch%main
-[Latest Version]: https://img.shields.io/crates/v/rume.svg
+[![crates.io badge]][crates.io] [![docs.rs badge]][docs.rs] [![build badge]][build] [![codecov badge]][codecov] [![license badge]][license]
+
+[build badge]: https://img.shields.io/github/workflow/status/nicochatzi/rume/CI/main
+[build]: https://github.com/nicochatzi/rume/actions?query=branch%main
+[docs.rs badge]: https://docs.rs/rume/badge.svg
+[docs.rs]: https://docs.rs/rume
+[crates.io badge]: https://img.shields.io/crates/v/rume.svg
 [crates.io]: https://crates.io/crates/rume
-[codecov]:https://codecov.io/gh/nicochatzi/rume/branch/main/graph/badge.svg
-[coverage]:https://codecov.io/gh/nicochatzi/rume
+[codecov badge]:https://codecov.io/gh/nicochatzi/rume/branch/main/graph/badge.svg
+[codecov]:https://codecov.io/gh/nicochatzi/rume
+[license badge]: https://img.shields.io/badge/License-MIT-blue.svg
+[license]: https://opensource.org/licenses/MIT
 
 RUst Modular Environment for writing audio DSP graphs.
 
-## Processors
+## Features
+
+By default this crate uses `std`. It supports `#![no_std]` with `default-features = false`.
+
+* `std`: Use the Rust standard library.
+* `lab`: (requires std) A set of utilities for analyzing a graph.
+
+## Examples
+
+* [beep](rume/examples/beep.rs): Hello world of audio.
+* [modulate](rume/examples/modulate.rs): Multi-threaded modulation.
+* [lab](examples/lab/src/main.rs): Graph analysis.
+
+## Usage
+
+### Processor declaration
 
 ```rust
-const TWO_PI: f32 = 2.0 * std::consts::f32::PI;
-
 #[rume::processor]
 pub struct Sine {
-    phase: f32,
-    sample_rate: u32,
+    phasor: rume::Phasor,
+    sample_time: f32,
 
-    #[rume::processor_input]
+    #[rume::input]
     amplitude: f32,
 
-    #[rume::processor_input]
+    #[rume::input]
     frequency: f32,
 
-    #[rume::processor_output]
+    #[rume::output]
     sample: f32,
 }
 
 impl rume::Processor for Sine {
     fn prepare(&mut self, data: rume::AudioConfig) {
-        self.sample_rate = data.sample_rate;
+        self.sample_time = 1. / data.sample_rate as f32;
     }
 
     fn process(&mut self) {
-        let phase_increment = TWO_PI * self.frequency * (1.0_f32 / self.sample_rate as f32);
-        self.phase = (self.phase + phase_increment) % TWO_PI;
-        self.sample = self.phase.sin() * self.amplitude;
+        const TWO_PI: f32 = 2.0 * std::consts::f32::PI;
+        self.phasor.inc(TWO_PI * self.frequency * self.sample_time));
+        self.sample = self.phasor.advance().sin() * self.amplitude;
     }
 }
 ```
 
-## Graphs
+### Graph declaration
 
 ```rust
 pub mod synth {
@@ -64,7 +83,11 @@ pub mod synth {
         }
     }
 }
+```
 
+### Graph usage
+
+```rust
 fn main() {
     let (mut graph, inputs, outputs) = synth::build();
 
@@ -77,8 +100,8 @@ fn main() {
 
     std::thread::spawn(move || {
         let config = rume::AudioConfig {
-            sample_rate: SAMPLE_RATE,
-            buffer_size: BUFFER_SIZE,
+            sample_rate: 48_000_f32.into(),
+            buffer_size: 512,
             num_channels: 1,
         }
         graph.prepare(config);
@@ -89,5 +112,4 @@ fn main() {
         }
     }).join();`
 }
-
 ```
